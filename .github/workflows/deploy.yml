@@ -41,4 +41,5 @@ jobs:
           protocol: ftp
           local-dir: build/web/
           server-dir: dodgerblue-ram-159741.hostingersite.com/public_html/lms/
+          log-level: verbose
           dangerous-clean-slate: false
