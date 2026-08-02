@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "519830977024",
+    "project_id": "kidst-aa673",
+    "storage_bucket": "kidst-aa673.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:519830977024:android:9abd05b3f11bfb31ac76e5",
+        "android_client_info": {
+          "package_name": "com.example.kids_talk_online"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "519830977024-v58slsbieat6vhemmm5lebchbfie2a6l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9EaeiPL6fuVToTT8Xei9SEpfrVloIimU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "519830977024-v58slsbieat6vhemmm5lebchbfie2a6l.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "519830977024-o2remo1ln3kvkfekf4sc1cpfpdn1pnbc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.kidsTalkOnline"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
