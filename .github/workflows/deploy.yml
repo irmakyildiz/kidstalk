@@ -39,5 +39,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: build/web/
-          server-dir: lms/
+          server-dir: dodgerblue-ram-159741.hostingersite.com/public_html/lms/
           dangerous-clean-slate: false
