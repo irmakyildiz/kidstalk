@@ -35,4 +35,4 @@ jobs:
       - name: 🚀 FTP Deploy to Hostinger via LFTP
         run: |
           sudo apt-get update && sudo apt-get install -y lftp
-          lftp -c "set ftp:ssl-allow no; open -u '${{ secrets.FTP_USERNAME }}','${{ secrets.FTP_PASSWORD }}' '${{ secrets.FTP_SERVER }}'; mirror -R --delete --verbose build/web/ dodgerblue-ram-159741.hostingersite.com/public_html/lms/"
+          lftp -c "set ftp:ssl-allow no; open -u '${{ secrets.FTP_USERNAME }}','${{ secrets.FTP_PASSWORD }}' '${{ secrets.FTP_SERVER }}'; mirror -R --delete --verbose build/web/ public_html/lms/; mirror -R --delete --verbose build/web/ dodgerblue-ram-159741.hostingersite.com/public_html/lms/"
