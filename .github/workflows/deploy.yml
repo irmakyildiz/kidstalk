@@ -38,7 +38,8 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
+          protocol: ftps
+          security: loose
           local-dir: build/web/
           server-dir: dodgerblue-ram-159741.hostingersite.com/public_html/lms/
           dangerous-clean-slate: false
