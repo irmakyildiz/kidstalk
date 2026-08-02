@@ -33,13 +33,10 @@ jobs:
           echo '</IfModule>' >> build/web/.htaccess
 
       - name: 🚀 FTP Deploy to Hostinger
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: wlixxd/ftp-share-action@v1.0
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
+          ftp-server: ${{ secrets.FTP_SERVER }}
+          ftp-username: ${{ secrets.FTP_USERNAME }}
+          ftp-password: ${{ secrets.FTP_PASSWORD }}
           local-dir: build/web/
-          server-dir: dodgerblue-ram-159741.hostingersite.com/public_html/lms/
-          log-level: verbose
-          dangerous-clean-slate: true
+          remote-dir: dodgerblue-ram-159741.hostingersite.com/public_html/lms/
