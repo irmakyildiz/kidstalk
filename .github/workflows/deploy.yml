@@ -32,11 +32,7 @@ jobs:
           echo '  RewriteRule . /lms/index.html [L]' >> build/web/.htaccess
           echo '</IfModule>' >> build/web/.htaccess
 
-      - name: 🚀 FTP Deploy to Hostinger
-        uses: wlixxd/ftp-share-action@v1.0
-        with:
-          ftp-server: ${{ secrets.FTP_SERVER }}
-          ftp-username: ${{ secrets.FTP_USERNAME }}
-          ftp-password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: build/web/
-          remote-dir: dodgerblue-ram-159741.hostingersite.com/public_html/lms/
+      - name: 🚀 FTP Deploy to Hostinger via LFTP
+        run: |
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -c "set ftp:ssl-allow no; open -u '${{ secrets.FTP_USERNAME }}','${{ secrets.FTP_PASSWORD }}' '${{ secrets.FTP_SERVER }}'; mirror -R --delete --verbose build/web/ dodgerblue-ram-159741.hostingersite.com/public_html/lms/"
