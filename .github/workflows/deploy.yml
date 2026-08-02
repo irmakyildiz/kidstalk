@@ -38,9 +38,7 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
-          security: loose
-          timeout: 120000
+          protocol: ftp
           local-dir: build/web/
           server-dir: dodgerblue-ram-159741.hostingersite.com/public_html/lms/
           dangerous-clean-slate: false
