@@ -23,7 +23,14 @@ jobs:
         run: |
           flutter pub get
           flutter build web --release --base-href "/lms/"
-          cp web/.htaccess build/web/.htaccess
+          echo '<IfModule mod_rewrite.c>' > build/web/.htaccess
+          echo '  RewriteEngine On' >> build/web/.htaccess
+          echo '  RewriteBase /lms/' >> build/web/.htaccess
+          echo '  RewriteRule ^index\.html$ - [L]' >> build/web/.htaccess
+          echo '  RewriteCond %{REQUEST_FILENAME} !-f' >> build/web/.htaccess
+          echo '  RewriteCond %{REQUEST_FILENAME} !-d' >> build/web/.htaccess
+          echo '  RewriteRule . /lms/index.html [L]' >> build/web/.htaccess
+          echo '</IfModule>' >> build/web/.htaccess
 
       - name: 🚀 FTP Deploy to Hostinger
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
