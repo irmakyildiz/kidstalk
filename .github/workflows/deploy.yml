@@ -27,7 +27,7 @@ jobs:
           cp web/.htaccess build/web/.htaccess
 
       - name: 🚀 FTP Deploy to Hostinger
-        uses: SamKirsch/ftp-deploy-action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
