@@ -22,7 +22,7 @@ jobs:
       - name: 📦 Install Dependencies & Build Web
         run: |
           flutter pub get
-          flutter build web --release --base-href "/lms/" --pwa-strategy=none
+          flutter build web --release --base-href "/lms/"
           echo '<IfModule mod_rewrite.c>' > build/web/.htaccess
           echo '  RewriteEngine On' >> build/web/.htaccess
           echo '  RewriteBase /lms/' >> build/web/.htaccess
