@@ -273,6 +273,31 @@ class AdminRepository {
     }
   }
 
+  /// 5. YÖNETİCİ HESABINI VERİTABANINDAN & AUTH'DAN KALICI OLARAK OLUŞTURUR
+  Future<void> createAdminCompletely({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final String cleanEmail = email.trim().toLowerCase();
+    await _createFirebaseAuthUser(cleanEmail, password.trim());
+
+    await _firestore.collection('users').doc(cleanEmail).set({
+      'uid': cleanEmail,
+      'email': cleanEmail,
+      'fullName': name.trim(),
+      'role': 'admin',
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  /// 6. YÖNETİCİ HESABINI VERİTABANINDAN & AUTH'DAN KALICI SİLER
+  Future<void> deleteAdminCompletely(String adminEmail) async {
+    final String cleanEmail = adminEmail.trim().toLowerCase();
+    await _deleteFirebaseAuthUser(cleanEmail);
+    await _firestore.collection('users').doc(cleanEmail).delete();
+  }
+
   /// Öğretmenleri Canlı Getirir
   Stream<List<Map<String, dynamic>>> getTeachersStream() {
     return _firestore

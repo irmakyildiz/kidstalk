@@ -188,16 +188,14 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
     final String cleanEmail = _newAdminEmailCtrl.text.trim().toLowerCase();
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(cleanEmail).set({
-        'uid': cleanEmail,
-        'email': cleanEmail,
-        'fullName': _newAdminNameCtrl.text.trim(),
-        'role': 'admin',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _adminRepository.createAdminCompletely(
+        name: _newAdminNameCtrl.text.trim(),
+        email: cleanEmail,
+        password: _newAdminPassCtrl.text.trim(),
+      );
 
       if (mounted) {
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text('Yeni yönetici ($cleanEmail) başarıyla eklendi!'), backgroundColor: Colors.green));
+        scaffoldMessenger.showSnackBar(SnackBar(content: Text('Yeni yönetici ($cleanEmail) Firebase Auth & Firestore sistemine eklendi!'), backgroundColor: Colors.green));
         _newAdminNameCtrl.clear();
         _newAdminEmailCtrl.clear();
         _newAdminPassCtrl.clear();
@@ -223,9 +221,15 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
               onPressed: () async {
                 final scaffoldMessenger = ScaffoldMessenger.of(context);
-                Navigator.of(dialogContext).pop();
-                await FirebaseFirestore.instance.collection('users').doc(adminDocId).delete();
-                scaffoldMessenger.showSnackBar(SnackBar(content: Text('$name yöneticisi silindi.'), backgroundColor: Colors.redAccent));
+                try {
+                  await _adminRepository.deleteAdminCompletely(adminDocId);
+                  if (mounted) {
+                    Navigator.of(dialogContext).pop();
+                    scaffoldMessenger.showSnackBar(SnackBar(content: Text('$name sistemden tamamen silindi.'), backgroundColor: Colors.orange));
+                  }
+                } catch (e) {
+                  scaffoldMessenger.showSnackBar(SnackBar(content: Text('Silme hatası: $e'), backgroundColor: Colors.redAccent));
+                }
               },
               child: const Text('Sil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),

@@ -3,8 +3,8 @@ class AppStrings {
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'tr': {
-      'loginTitle': 'Bilgi Yönetim Sistemi',
-      'loginSubtitle': 'Size WhatsApp üzerinden iletilen kullanıcı adı ve şifrenizle giriş yapınız.',
+      'loginTitle': 'Giriş Yap',
+      'loginSubtitle': 'Kullanıcı adı ve şifrenizle giriş yapınız.',
       'emailHint': 'E-Posta / Kullanıcı Adı',
       'passwordHint': 'Şifre',
       'loginButton': 'Giriş Yap',

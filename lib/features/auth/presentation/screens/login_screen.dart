@@ -181,18 +181,18 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 28),
           Text(
             AppStrings.currentLang == 'tr'
-                ? 'Çocuklar İçin\nEğlenceli Online\nİngilizce Dersler'
-                : 'Fun Online\nEnglish Classes\nFor Kids',
-            style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Colors.white, height: 1.2),
+                ? 'Online İngilizce\nDers Platformu'
+                : 'Online English\nLearning Platform',
+            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, height: 1.2),
           ),
           const SizedBox(height: 16),
           Text(
             AppStrings.currentLang == 'tr'
-                ? 'Öğretmen, Öğrenci, Veli Ve Ders Programı Bilgilerine Tek Merkezden Kolayca Erişim'
-                : 'Easy One-Stop Access To Teacher, Student, Parent & Schedule Details',
-            style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.9), height: 1.5),
+                ? 'Öğretmen, Öğrenci ve Veli Bilgilerine Tek Ekrandan Erişin'
+                : 'Access Teacher, Student and Parent Portals in One Place',
+            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.95), height: 1.4),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 36),
           _buildFeatureItem(Icons.calendar_month_rounded, AppStrings.get('mySchedule')),
           const SizedBox(height: 14),
           _buildFeatureItem(Icons.verified_user_rounded, AppStrings.get('loginSubtitle')),

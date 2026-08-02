@@ -147,7 +147,7 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                         icon: const Icon(Icons.send_rounded, color: Colors.white),
-                        label: const Text('2 Hesabı Firebase\'e Kaydet & WhatsApp Giriş Bilgisi Gönder', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                        label: const Text('Hesapları Oluştur', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                         onPressed: () async {
                           if (_parentNameController.text.isEmpty || _parentEmailController.text.isEmpty || _parentPasswordController.text.isEmpty || _studentNameController.text.isEmpty || _studentEmailController.text.isEmpty || _studentPasswordController.text.isEmpty || _parentPhoneController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen veli, öğrenci ve şifre alanlarını doldurun.')));
@@ -221,7 +221,7 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF25D366), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                         icon: const Icon(Icons.send_rounded, color: Colors.white),
-                        label: const Text('Öğretmen Hesabını Firebase\'e Kaydet & WhatsApp Gönder', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                        label: const Text('Hesabı Oluştur', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                         onPressed: () async {
                           if (_teacherNameController.text.isEmpty || _teacherEmailController.text.isEmpty || _teacherPasswordController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen öğretmen adı, e-postası ve şifresini doldurun.')));

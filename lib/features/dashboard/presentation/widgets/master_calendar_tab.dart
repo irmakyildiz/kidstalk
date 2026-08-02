@@ -165,6 +165,9 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
               final allDocs = snapshot.data?.docs ?? [];
               var filteredDocs = allDocs.where((doc) {
                 final data = doc.data();
+                final String status = data['status'] as String? ?? 'planned';
+                // Takvimde molaları göster me, sadece işlenecek gerçek dersleri göster
+                if (status == 'busy') return false;
                 if (_selectedDayChip == 'Tümü') return true;
                 return data['day'] == _selectedDayChip;
               }).toList();
