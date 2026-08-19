@@ -481,16 +481,10 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                                             }
                                           }
                                         } else {
-                                          // BOŞ MÜSAİT SLOT
-                                          if (isPastDay) {
-                                            bgColor = const Color(0xFFF8F9FA);
-                                            textColor = const Color(0xFFA4B0BE);
-                                            label = 'Müsait';
-                                          } else {
-                                            bgColor = const Color(0xFFEEF9F1);
-                                            textColor = const Color(0xFF2E7D32);
-                                            label = 'Müsait';
-                                          }
+                                          // BOŞ MÜSAİT SLOT (Geçmiş ve gelecek günlerde her zaman normal yeşil)
+                                          bgColor = const Color(0xFFEEF9F1);
+                                          textColor = const Color(0xFF2E7D32);
+                                          label = 'Müsait';
                                         }
 
                                         return Container(
