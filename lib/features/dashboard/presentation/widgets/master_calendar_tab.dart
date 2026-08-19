@@ -304,6 +304,7 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                             padding: const EdgeInsets.only(bottom: 12.0),
                             child: Table(
                               defaultColumnWidth: const FixedColumnWidth(110.0),
+                              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                               columnWidths: const {
                                 0: FixedColumnWidth(100.0),
                               },
@@ -345,17 +346,15 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                                 ..._times.map((time) {
                                   return TableRow(
                                     children: <Widget>[
-                                      TableCell(
-                                        verticalAlignment: TableCellVerticalAlignment.fill,
-                                        child: Container(
-                                          color: const Color(0xFFF9FAFC),
-                                          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            time,
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: brandDark),
-                                          ),
+                                      Container(
+                                        height: 48,
+                                        color: const Color(0xFFF9FAFC),
+                                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          time,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: brandDark),
                                         ),
                                       ),
                                       ...monthDays.map((d) {
@@ -365,6 +364,9 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                                         final String dayName = _getDayName(d);
                                         final bool isPastDay = d.isBefore(DateTime(now.year, now.month, now.day));
 
+                                        final String targetTeacherId = (_selectedTeacherId ?? '').toLowerCase().trim();
+                                        final String targetTeacherName = (_selectedTeacherName).toLowerCase().trim();
+
                                         // 1. ÖNCELİK: Bu tarihte tamamlanmış ders var mı? (completed_lessons)
                                         final completedMatch = completedDocs.where((doc) {
                                           final data = doc.data();
@@ -372,8 +374,6 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                                           final tName = (data['teacherName'] ?? '').toString().toLowerCase().trim();
                                           final cDate = data['date'] ?? '';
                                           final cTime = data['time'] ?? '';
-                                          final targetTeacherId = (_selectedTeacherId ?? '').toLowerCase().trim();
-                                          final targetTeacherName = (_selectedTeacherName).toLowerCase().trim();
 
                                           final bool teacherMatches = (targetTeacherId.isNotEmpty && (tId == targetTeacherId || tId.contains(targetTeacherId) || targetTeacherId.contains(tId))) ||
                                               (targetTeacherName.isNotEmpty && (tName == targetTeacherName || tName.contains(targetTeacherName) || targetTeacherName.contains(tName)));
@@ -383,32 +383,29 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
 
                                         if (completedMatch.isNotEmpty) {
                                           final stName = completedMatch.first.data()['studentName'] ?? 'Öğrenci';
-                                          return TableCell(
-                                            verticalAlignment: TableCellVerticalAlignment.fill,
-                                            child: Container(
-                                              color: const Color(0xFFD4EDDA), // YEŞİL TAMAMLANMIŞ DERS
-                                              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
-                                              child: Center(
-                                                child: Column(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: <Widget>[
-                                                    Text(
-                                                      stName,
-                                                      textAlign: TextAlign.center,
-                                                      style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF155724)),
-                                                      maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                    const SizedBox(height: 1),
-                                                    const Text(
-                                                      '✓ Tamamlandı',
-                                                      textAlign: TextAlign.center,
-                                                      style: TextStyle(fontSize: 8.0, fontWeight: FontWeight.w700, color: Color(0xFF155724)),
-                                                    ),
-                                                  ],
+                                          return Container(
+                                            height: 48,
+                                            color: const Color(0xFFD4EDDA), // YEŞİL TAMAMLANMIŞ DERS
+                                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                            alignment: Alignment.center,
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: <Widget>[
+                                                Text(
+                                                  stName,
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF155724)),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
-                                              ),
+                                                const SizedBox(height: 1),
+                                                const Text(
+                                                  '✓ Tamamlandı',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(fontSize: 8.0, fontWeight: FontWeight.w700, color: Color(0xFF155724)),
+                                                ),
+                                              ],
                                             ),
                                           );
                                         }
@@ -420,8 +417,6 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                                           final tName = (data['teacherName'] ?? '').toString().toLowerCase().trim();
                                           final lDay = (data['day'] ?? '').toString().toLowerCase().trim();
                                           final lTime = (data['time'] ?? '').toString().trim();
-                                          final targetTeacherId = (_selectedTeacherId ?? '').toLowerCase().trim();
-                                          final targetTeacherName = (_selectedTeacherName).toLowerCase().trim();
 
                                           final bool teacherMatches = (targetTeacherId.isNotEmpty && (tId == targetTeacherId || tId.contains(targetTeacherId) || targetTeacherId.contains(tId))) ||
                                               (targetTeacherName.isNotEmpty && (tName == targetTeacherName || tName.contains(targetTeacherName) || targetTeacherName.contains(tName)));
@@ -498,34 +493,31 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                                           }
                                         }
 
-                                        return TableCell(
-                                          verticalAlignment: TableCellVerticalAlignment.fill,
-                                          child: Container(
-                                            color: bgColor,
-                                            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 3.0),
-                                            child: Center(
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: <Widget>[
-                                                  Text(
-                                                    label,
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: textColor),
-                                                    maxLines: 1,
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                  if (subLabel != null) ...<Widget>[
-                                                    const SizedBox(height: 1),
-                                                    Text(
-                                                      subLabel,
-                                                      textAlign: TextAlign.center,
-                                                      style: TextStyle(fontSize: 8.0, fontWeight: FontWeight.w600, color: textColor.withOpacity(0.85)),
-                                                    ),
-                                                  ],
-                                                ],
+                                        return Container(
+                                          height: 48,
+                                          color: bgColor,
+                                          padding: const EdgeInsets.symmetric(horizontal: 3.0),
+                                          alignment: Alignment.center,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: <Widget>[
+                                              Text(
+                                                label,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: textColor),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                            ),
+                                              if (subLabel != null) ...<Widget>[
+                                                const SizedBox(height: 1),
+                                                Text(
+                                                  subLabel,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(fontSize: 8.0, fontWeight: FontWeight.w600, color: textColor.withOpacity(0.85)),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         );
                                       }).toList(),
