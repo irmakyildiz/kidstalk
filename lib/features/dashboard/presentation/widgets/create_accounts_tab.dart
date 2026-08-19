@@ -389,13 +389,10 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
         const SizedBox(height: 20),
 
         // CHECKBOX VE BUTON
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: <Widget>[
-            Column(
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final bool narrow = constraints.maxWidth < 480;
+            final Widget checkboxCol = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -447,8 +444,8 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
                   ),
                 ),
               ],
-            ),
-            SizedBox(
+            );
+            final Widget btn = SizedBox(
               height: 44,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -464,8 +461,19 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
                 label: const Text('Hesabı Oluştur', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: _isLoading ? null : _createStudentAccount,
               ),
-            ),
-          ],
+            );
+            if (narrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[checkboxCol, const SizedBox(height: 12), btn],
+              );
+            }
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[Flexible(child: checkboxCol), const SizedBox(width: 12), btn],
+            );
+          },
         ),
       ],
     );
@@ -539,13 +547,10 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
         const SizedBox(height: 20),
 
         // CHECKBOX VE BUTON
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: <Widget>[
-            Column(
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final bool narrow = constraints.maxWidth < 480;
+            final Widget checkboxCol = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -597,8 +602,8 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
                   ),
                 ),
               ],
-            ),
-            SizedBox(
+            );
+            final Widget btn = SizedBox(
               height: 44,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -614,8 +619,19 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
                 label: const Text('Hesabı Oluştur', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: _isLoading ? null : _createTeacherAccount,
               ),
-            ),
-          ],
+            );
+            if (narrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[checkboxCol, const SizedBox(height: 12), btn],
+              );
+            }
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[Flexible(child: checkboxCol), const SizedBox(width: 12), btn],
+            );
+          },
         ),
       ],
     );
