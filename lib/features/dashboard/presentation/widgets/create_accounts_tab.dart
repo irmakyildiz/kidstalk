@@ -388,10 +388,12 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
         ],
         const SizedBox(height: 20),
 
-        // CHECKBOX VE BUTON (DENGELİ VE ŞIK YERLEŞİM)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        // CHECKBOX VE BUTON
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,10 +538,12 @@ class _CreateAccountsTabState extends State<CreateAccountsTab> {
         ],
         const SizedBox(height: 20),
 
-        // CHECKBOX VE BUTON (DENGELİ VE ŞIK YERLEŞİM)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        // CHECKBOX VE BUTON
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,

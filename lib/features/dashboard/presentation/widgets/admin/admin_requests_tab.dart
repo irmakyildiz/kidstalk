@@ -185,27 +185,34 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFFE8EE),
-                                    borderRadius: BorderRadius.circular(8),
+                            Flexible(
+                              child: Row(
+                                children: <Widget>[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFE8EE),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      teacherName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandPink),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                  child: Text(
-                                    teacherName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandPink),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      title,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  title,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                             Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
                                 const Icon(Icons.access_time_rounded, size: 14, color: Colors.grey),
                                 const SizedBox(width: 4),
@@ -342,28 +349,6 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                         ),
                       ],
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        // ÜST BİLGİ SATIRI
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF1F2F6),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    teacherName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandDark),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
                                   title,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: brandDark),
                                 ),

@@ -88,7 +88,10 @@ class ParentPaymentTab extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    const Text('Tanımlı Paketiniz', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: brandDark)),
+                    const Flexible(
+                      child: Text('Tanımlı Paketiniz', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: brandDark), overflow: TextOverflow.ellipsis),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(color: const Color(0xFFFFF0D6), borderRadius: BorderRadius.circular(12)),
