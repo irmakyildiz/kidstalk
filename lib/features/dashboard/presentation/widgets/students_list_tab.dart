@@ -432,22 +432,27 @@ class _StudentsListTabState extends State<StudentsListTab> {
           // ARAMA ÇUBUĞU
           Container(
             height: 46,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF555555), width: 1.0),
+              border: Border.all(color: const Color(0xFFCCCCCC), width: 1.2),
             ),
             child: TextField(
               controller: _searchController,
               onChanged: (_) => setState(() {}),
               textAlignVertical: TextAlignVertical.center,
-              style: const TextStyle(fontSize: 14, color: brandDark),
+              style: const TextStyle(fontSize: 13.5, color: brandDark),
               decoration: const InputDecoration(
+                isDense: true,
                 hintText: 'Öğrenci veya veli ismi ile ara...',
                 hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-                prefixIcon: Icon(Icons.search_rounded, color: brandPink, size: 22),
+                prefixIcon: Icon(Icons.search_rounded, color: brandPink, size: 20),
+                prefixIconConstraints: BoxConstraints(minWidth: 44, minHeight: 44),
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 0),
               ),
             ),
           ),
