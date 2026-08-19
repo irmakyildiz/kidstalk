@@ -43,6 +43,30 @@ class ParentScheduleTab extends StatelessWidget {
     }
   }
 
+  static int _getDayOrder(String day) {
+    final d = day.trim().toLowerCase();
+    if (d == 'pazartesi' || d == 'monday') return 0;
+    if (d == 'salı' || d == 'sali' || d == 'tuesday') return 1;
+    if (d == 'çarşamba' || d == 'carsamba' || d == 'wednesday') return 2;
+    if (d == 'perşembe' || d == 'persembe' || d == 'thursday') return 3;
+    if (d == 'cuma' || d == 'friday') return 4;
+    if (d == 'cumartesi' || d == 'saturday') return 5;
+    if (d == 'pazar' || d == 'sunday') return 6;
+    return 7;
+  }
+
+  static int _getTimeOrder(String time) {
+    try {
+      final firstPart = time.split('-').first.trim();
+      final timeParts = firstPart.split(':');
+      final hour = int.parse(timeParts[0].trim());
+      final minute = int.parse(timeParts[1].trim());
+      return hour * 60 + minute;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (studentId == null) {
@@ -67,6 +91,23 @@ class ParentScheduleTab extends StatelessWidget {
               final status = (data['status'] ?? '').toString().toLowerCase();
               return (sId == cleanId || sName == cleanId) && status != 'free' && status != 'busy';
             }).toList();
+
+            studentLessons.sort((a, b) {
+              final dataA = a.data();
+              final dataB = b.data();
+              final dayA = (dataA['day'] ?? '').toString();
+              final dayB = (dataB['day'] ?? '').toString();
+              final orderDayA = _getDayOrder(dayA);
+              final orderDayB = _getDayOrder(dayB);
+
+              if (orderDayA != orderDayB) {
+                return orderDayA.compareTo(orderDayB);
+              }
+
+              final timeA = (dataA['time'] ?? '').toString();
+              final timeB = (dataB['time'] ?? '').toString();
+              return _getTimeOrder(timeA).compareTo(_getTimeOrder(timeB));
+            });
 
             if (studentLessons.isEmpty) {
               return const Center(

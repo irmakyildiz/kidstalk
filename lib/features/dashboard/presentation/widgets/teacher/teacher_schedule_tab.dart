@@ -102,6 +102,18 @@ class _TeacherScheduleTabState extends State<TeacherScheduleTab> {
     }
   }
 
+  int _getTimeOrder(String time) {
+    try {
+      final firstPart = time.split('-').first.trim();
+      final timeParts = firstPart.split(':');
+      final hour = int.parse(timeParts[0].trim());
+      final minute = int.parse(timeParts[1].trim());
+      return hour * 60 + minute;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -156,6 +168,13 @@ class _TeacherScheduleTabState extends State<TeacherScheduleTab> {
                     _isExactDayMatch(lDay) &&
                     status != 'free';
               }).toList();
+
+              // Saat olarak kronolojik sıralama
+              lessons.sort((a, b) {
+                final timeA = (a.data()['time'] ?? '').toString();
+                final timeB = (b.data()['time'] ?? '').toString();
+                return _getTimeOrder(timeA).compareTo(_getTimeOrder(timeB));
+              });
 
               if (lessons.isEmpty) {
                 return Container(

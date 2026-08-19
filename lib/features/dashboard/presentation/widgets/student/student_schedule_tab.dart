@@ -14,6 +14,30 @@ class StudentScheduleTab extends StatelessWidget {
   static const Color brandPink = Color(0xFFFF3366);
   static const Color brandDark = Color(0xFF2C3E50);
 
+  static int _getDayOrder(String day) {
+    final d = day.trim().toLowerCase();
+    if (d == 'pazartesi' || d == 'monday') return 0;
+    if (d == 'salı' || d == 'sali' || d == 'tuesday') return 1;
+    if (d == 'çarşamba' || d == 'carsamba' || d == 'wednesday') return 2;
+    if (d == 'perşembe' || d == 'persembe' || d == 'thursday') return 3;
+    if (d == 'cuma' || d == 'friday') return 4;
+    if (d == 'cumartesi' || d == 'saturday') return 5;
+    if (d == 'pazar' || d == 'sunday') return 6;
+    return 7;
+  }
+
+  static int _getTimeOrder(String time) {
+    try {
+      final firstPart = time.split('-').first.trim();
+      final timeParts = firstPart.split(':');
+      final hour = int.parse(timeParts[0].trim());
+      final minute = int.parse(timeParts[1].trim());
+      return hour * 60 + minute;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ScheduleRepository scheduleRepository = ScheduleRepository();
@@ -35,6 +59,24 @@ class StudentScheduleTab extends StatelessWidget {
             docs.add(doc);
           }
         }
+
+        // Gün ve Saat olarak Kronolojik Sıralama
+        docs.sort((a, b) {
+          final dataA = a.data();
+          final dataB = b.data();
+          final dayA = (dataA['day'] ?? '').toString();
+          final dayB = (dataB['day'] ?? '').toString();
+          final orderDayA = _getDayOrder(dayA);
+          final orderDayB = _getDayOrder(dayB);
+
+          if (orderDayA != orderDayB) {
+            return orderDayA.compareTo(orderDayB);
+          }
+
+          final timeA = (dataA['time'] ?? '').toString();
+          final timeB = (dataB['time'] ?? '').toString();
+          return _getTimeOrder(timeA).compareTo(_getTimeOrder(timeB));
+        });
 
         if (docs.isEmpty) {
           return const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Henüz atanmış bir ders saatiniz bulunmuyor.', style: TextStyle(color: Colors.grey))));
