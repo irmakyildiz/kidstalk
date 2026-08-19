@@ -43,6 +43,27 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
     }
   }
 
+  String _formatDateTime(dynamic timestamp) {
+    if (timestamp == null) {
+      final now = DateTime.now();
+      return '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    }
+    DateTime dt;
+    if (timestamp is Timestamp) {
+      dt = timestamp.toDate();
+    } else if (timestamp is DateTime) {
+      dt = timestamp;
+    } else {
+      dt = DateTime.tryParse(timestamp.toString()) ?? DateTime.now();
+    }
+    final String day = dt.day.toString().padLeft(2, '0');
+    final String month = dt.month.toString().padLeft(2, '0');
+    final String year = dt.year.toString();
+    final String hour = dt.hour.toString().padLeft(2, '0');
+    final String minute = dt.minute.toString().padLeft(2, '0');
+    return '$day/$month/$year $hour:$minute';
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -91,7 +112,8 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                   final docId = docs[index].id;
                   final teacherName = data['teacherName'] ?? 'Öğretmen';
                   final title = data['title'] ?? data['type'] ?? 'Talep';
-                  final desc = data['description'] ?? data['note'] ?? '';
+                  final desc = (data['description'] ?? data['note'] ?? '').toString();
+                  final dateStr = _formatDateTime(data['createdAt']);
 
                   return Container(
                     padding: const EdgeInsets.all(16),
@@ -100,32 +122,93 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: const Color(0xFFFFE3E8)),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text('$teacherName - $title', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark)),
-                              const SizedBox(height: 4),
-                              Text(desc, style: const TextStyle(fontSize: 13, color: Colors.black87)),
-                            ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFE8EE),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    teacherName,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandPink),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  title,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: <Widget>[
+                                const Icon(Icons.access_time_rounded, size: 14, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(dateStr, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        if (desc.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFFFDDE5)),
+                            ),
+                            child: Text(
+                              desc,
+                              style: const TextStyle(fontSize: 13, color: brandDark, height: 1.35),
+                            ),
                           ),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                          onPressed: () async {
-                            await FirebaseFirestore.instance.collection('teacher_requests').doc(docId).update({'status': 'approved'});
-                          },
-                          child: const Text('Onayla', style: TextStyle(color: Colors.white)),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                          onPressed: () async {
-                            await FirebaseFirestore.instance.collection('teacher_requests').doc(docId).update({'status': 'rejected'});
-                          },
-                          child: const Text('Reddet'),
+                        ],
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: <Widget>[
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.redAccent,
+                                side: const BorderSide(color: Color(0xFFFFCCD5)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.close_rounded, size: 16),
+                              label: const Text('Reddet'),
+                              onPressed: () async {
+                                await FirebaseFirestore.instance.collection('teacher_requests').doc(docId).update({
+                                  'status': 'rejected',
+                                  'processedAt': FieldValue.serverTimestamp(),
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 10),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF20BF6B),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                elevation: 0,
+                              ),
+                              icon: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                              label: const Text('Onayla', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              onPressed: () async {
+                                await FirebaseFirestore.instance.collection('teacher_requests').doc(docId).update({
+                                  'status': 'approved',
+                                  'processedAt': FieldValue.serverTimestamp(),
+                                });
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -140,7 +223,7 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
           Row(
             children: <Widget>[
               const Icon(Icons.history_rounded, color: Color(0xFF4A69BD), size: 20),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               const Text('Geçmiş Öğretmen Talepleri', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandDark)),
               const Spacer(),
               TextButton.icon(
@@ -177,36 +260,124 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: docs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final data = docs[index].data();
                   final teacherName = data['teacherName'] ?? 'Öğretmen';
                   final title = data['title'] ?? data['type'] ?? 'Talep';
+                  final desc = (data['description'] ?? data['note'] ?? '').toString();
                   final status = data['status'] ?? 'approved';
                   final isApproved = status == 'approved';
+                  final dateStr = _formatDateTime(data['createdAt'] ?? data['processedAt']);
 
                   return Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0xFFE8ECEF)),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        Text('$teacherName - $title', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isApproved ? Colors.green.shade50 : Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            isApproved ? 'Onaylandı' : 'Reddedildi',
-                            style: TextStyle(color: isApproved ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
-                          ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        // ÜST BİLGİ SATIRI
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F2F6),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    teacherName,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandDark),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  title,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: brandDark),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: <Widget>[
+                                const Icon(Icons.calendar_today_rounded, size: 13, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(
+                                  dateStr,
+                                  style: const TextStyle(fontSize: 11.5, color: Colors.grey, fontWeight: FontWeight.w500),
+                                ),
+                                const SizedBox(width: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isApproved ? const Color(0xFFE8F8F0) : const Color(0xFFFFECEE),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Icon(
+                                        isApproved ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                        size: 13,
+                                        color: isApproved ? const Color(0xFF20BF6B) : const Color(0xFFEB3B5A),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        isApproved ? 'Onaylandı' : 'Reddedildi',
+                                        style: TextStyle(
+                                          color: isApproved ? const Color(0xFF20BF6B) : const Color(0xFFEB3B5A),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        // TALEP MESAJI KUTUSU
+                        if (desc.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9FAFC),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFECEFF1)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                const Text(
+                                  'Talep Mesajı & Detaylar:',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  desc,
+                                  style: const TextStyle(fontSize: 13, color: brandDark, height: 1.35),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   );

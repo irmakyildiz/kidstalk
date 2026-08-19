@@ -71,6 +71,27 @@ class _TeacherRequestTabState extends State<TeacherRequestTab> {
     }
   }
 
+  String _formatDateTime(dynamic timestamp) {
+    if (timestamp == null) {
+      final now = DateTime.now();
+      return '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    }
+    DateTime dt;
+    if (timestamp is Timestamp) {
+      dt = timestamp.toDate();
+    } else if (timestamp is DateTime) {
+      dt = timestamp;
+    } else {
+      dt = DateTime.tryParse(timestamp.toString()) ?? DateTime.now();
+    }
+    final String day = dt.day.toString().padLeft(2, '0');
+    final String month = dt.month.toString().padLeft(2, '0');
+    final String year = dt.year.toString();
+    final String hour = dt.hour.toString().padLeft(2, '0');
+    final String minute = dt.minute.toString().padLeft(2, '0');
+    return '$day/$month/$year $hour:$minute';
+  }
+
   void _withdrawRequest(String requestId, String title) async {
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -244,6 +265,7 @@ class _TeacherRequestTabState extends State<TeacherRequestTab> {
                   final title = data['title'] ?? data['type'] ?? 'Request';
                   final desc = data['description'] ?? '';
                   final status = data['status'] ?? 'pending';
+                  final dateStr = _formatDateTime(data['createdAt']);
 
                   Color statusColor = Colors.orange;
                   String statusLabel = 'Pending';
@@ -263,14 +285,23 @@ class _TeacherRequestTabState extends State<TeacherRequestTab> {
                       border: Border.all(color: const Color(0xFFE8ECEF)),
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark)),
-                              const SizedBox(height: 2),
-                              Text(desc, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              Row(
+                                children: <Widget>[
+                                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark)),
+                                  const SizedBox(width: 8),
+                                  Text(dateStr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                ],
+                              ),
+                              if (desc.isNotEmpty) ...<Widget>[
+                                const SizedBox(height: 4),
+                                Text(desc, style: const TextStyle(fontSize: 12.5, color: Color(0xFF555555), height: 1.3)),
+                              ],
                             ],
                           ),
                         ),
