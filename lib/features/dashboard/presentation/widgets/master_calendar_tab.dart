@@ -452,25 +452,24 @@ class _MasterCalendarTabState extends State<MasterCalendarTab> {
                                           final isBusy = status == 'busy';
                                           final student = data['studentName'] ?? '';
 
-                                          if (isPastDay) {
-                                            // GEÇMİŞ GÜN VE TAMAMLANMAMIŞ DERS: AÇIK GRİ GÖRÜNÜR
+                                          if (isBusy) {
+                                            // MEŞGUL SLOT HER ZAMAN SARI GÖRÜNÜR (Geçmiş günler dahil)
+                                            bgColor = const Color(0xFFFFF8E7);
+                                            textColor = const Color(0xFFD97706);
+                                            label = 'Meşgul';
+                                          } else if (isPastDay) {
+                                            // GEÇMİŞ GÜN VE TAMAMLANMAMIŞ DERS: AÇIK GRİ VE (Tamamlanmadı)
                                             bgColor = const Color(0xFFF1F2F6);
                                             textColor = const Color(0xFF57606F);
-                                            if (isBusy) {
-                                              label = 'Meşgul';
-                                            } else if (isDemo) {
+                                            if (isDemo) {
                                               label = student.isNotEmpty ? 'Demo: $student' : 'Demo';
                                             } else if (student.isNotEmpty) {
                                               label = student;
                                             }
-                                            subLabel = '(Geçmiş)';
+                                            subLabel = '(Tamamlanmadı)';
                                           } else {
-                                            // BUGÜN VEYA GELECEK GÜNLER:
-                                            if (isBusy) {
-                                              bgColor = const Color(0xFFFFF8E7);
-                                              textColor = const Color(0xFFD97706);
-                                              label = 'Meşgul';
-                                            } else if (isDemo) {
+                                            // BUGÜN VEYA GELECEK GÜNLER DERSLERİ:
+                                            if (isDemo) {
                                               bgColor = const Color(0xFFE8F4FD);
                                               textColor = const Color(0xFF0288D1);
                                               label = student.isNotEmpty ? 'Demo: $student' : 'Demo';
