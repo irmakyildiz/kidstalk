@@ -45,7 +45,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadSiblingsAndActiveStudent();
   }
 
@@ -320,7 +320,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
                 indicatorWeight: 3,
                 tabs: const <Widget>[
                   Tab(icon: Icon(Icons.calendar_month_rounded, size: 20), text: 'Ders Programı'),
-                  Tab(icon: Icon(Icons.assignment_outlined, size: 20), text: 'Ödevler'),
                   Tab(icon: Icon(Icons.auto_awesome_rounded, size: 20), text: 'Gelişim & Notlar'),
                   Tab(icon: Icon(Icons.credit_card_rounded, size: 20), text: 'Ödeme & IBAN'),
                 ],
@@ -333,7 +332,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen>
                 controller: _tabController,
                 children: <Widget>[
                   StudentScheduleTab(studentEmail: targetLookupId),
-                  StudentHomeworkTab(studentEmail: targetLookupId, studentName: _activeStudentName),
                   StudentFeedbackTab(studentEmail: targetLookupId),
                   StudentProfileTab(
                     studentEmail: targetLookupId,

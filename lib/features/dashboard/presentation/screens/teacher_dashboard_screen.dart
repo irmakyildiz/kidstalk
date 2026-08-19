@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
-import '../widgets/teacher/teacher_homework_tab.dart';
 import '../widgets/teacher/teacher_profile_tab_widget.dart';
-import '../widgets/teacher/teacher_request_tab.dart' hide TeacherHomeworkTab;
+import '../widgets/teacher/teacher_request_tab.dart';
 import '../widgets/teacher/teacher_schedule_tab.dart';
 import '../widgets/teacher/teacher_students_tab.dart';
 
@@ -38,7 +37,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   void initState() {
     super.initState();
     _displayName = widget.teacherName;
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadTeacherProfile();
   }
 
@@ -138,7 +137,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
               ),
             ),
 
-            // TAB BAR (5 TABS)
+            // TAB BAR (4 TABS)
             Container(
               color: Colors.white,
               child: TabBar(
@@ -150,7 +149,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                 tabs: const <Widget>[
                   Tab(icon: Icon(Icons.calendar_month_rounded, size: 20), text: 'My Schedule'),
                   Tab(icon: Icon(Icons.school_rounded, size: 20), text: 'My Students'),
-                  Tab(icon: Icon(Icons.assignment_outlined, size: 20), text: 'Homework'),
                   Tab(icon: Icon(Icons.edit_note_rounded, size: 20), text: 'Create Request'),
                   Tab(icon: Icon(Icons.person_rounded, size: 20), text: 'My Profile'),
                 ],
@@ -164,7 +162,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                 children: <Widget>[
                   TeacherScheduleTab(teacherId: widget.teacherId, teacherName: widget.teacherName, zoomLink: _zoomLink),
                   TeacherStudentsTab(teacherId: widget.teacherId, teacherName: widget.teacherName),
-                  TeacherHomeworkTab(teacherId: widget.teacherId, teacherName: widget.teacherName),
                   TeacherRequestTab(teacherId: widget.teacherId, teacherName: widget.teacherName),
                   TeacherProfileTabWidget(
                     teacherId: widget.teacherId,

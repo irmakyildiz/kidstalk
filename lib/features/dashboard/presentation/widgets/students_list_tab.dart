@@ -375,48 +375,6 @@ class _StudentsListTabState extends State<StudentsListTab> {
     );
   }
 
-  void _showHomeworksDialog(String studentId, String studentName) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('☑️ $studentName - Ödevler', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance.collection('homeworks').where('studentId', isEqualTo: studentId).snapshots(),
-            builder: (context, snap) {
-              if (!snap.hasData) return const LinearProgressIndicator();
-              final docs = snap.data!.docs;
-              if (docs.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text('Henüz tanımlanmış ödev bulunmamaktadır.'),
-                );
-              }
-              return ListView.separated(
-                shrinkWrap: true,
-                itemCount: docs.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (context, idx) {
-                  final data = docs[idx].data();
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(data['title'] ?? 'Ödev', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text(data['description'] ?? '', style: const TextStyle(fontSize: 13)),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Kapat')),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -734,21 +692,6 @@ class _StudentsListTabState extends State<StudentsListTab> {
                                         icon: const Icon(Icons.campaign_rounded, size: 16, color: brandPink),
                                         label: const Text('Geri Bildirimleri Görüntüle', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: brandPink)),
                                         onPressed: () => _showFeedbacksDialog(studentId, studentName),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: 38,
-                                      child: OutlinedButton.icon(
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: const Color(0xFF3B5998),
-                                          backgroundColor: Colors.white,
-                                          side: const BorderSide(color: Color(0xFF3B5998), width: 1.2),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        ),
-                                        icon: const Icon(Icons.check_box_rounded, size: 16, color: Color(0xFF3B5998)),
-                                        label: const Text('Ödevleri Görüntüle', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF3B5998))),
-                                        onPressed: () => _showHomeworksDialog(studentId, studentName),
                                       ),
                                     ),
                                   ],

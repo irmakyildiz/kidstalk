@@ -37,7 +37,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadStudentProfile();
   }
 
@@ -194,58 +194,32 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
             ),
 
             // 4 TABS (DERS PROGRAMI, ÖDEVLER, GELİŞİM & NOTLAR, ÖDEME & IBAN)
-            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: cleanEmail.isNotEmpty
-                  ? FirebaseFirestore.instance.collection('homeworks').where('studentId', isEqualTo: cleanEmail).snapshots()
-                  : FirebaseFirestore.instance.collection('homeworks').snapshots(),
-              builder: (context, snapshot) {
-                final docs = snapshot.data?.docs ?? [];
-                int unreadCount = 0;
-                for (final d in docs) {
-                  final data = d.data();
-                  final bool isRead = data['isRead'] as bool? ?? false;
-                  if (!isRead) {
-                    unreadCount++;
-                  }
-                }
-
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                labelColor: brandPink,
+                unselectedLabelColor: const Color(0xFF757575),
+                indicatorColor: brandPink,
+                indicatorWeight: 3,
+                tabs: const <Widget>[
+                  Tab(
+                    icon: Icon(Icons.calendar_month_rounded, size: 20),
+                    child: Text('Ders Programı', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
-                  child: TabBar(
-                    controller: _tabController,
-                    labelColor: brandPink,
-                    unselectedLabelColor: const Color(0xFF757575),
-                    indicatorColor: brandPink,
-                    indicatorWeight: 3,
-                    tabs: <Widget>[
-                      const Tab(
-                        icon: Icon(Icons.calendar_month_rounded, size: 20),
-                        child: Text('Ders Programı', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                      Tab(
-                        icon: Badge(
-                          isLabelVisible: unreadCount > 0,
-                          label: Text('$unreadCount', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
-                          backgroundColor: Colors.redAccent,
-                          child: const Icon(Icons.assignment_rounded, size: 20),
-                        ),
-                        child: const Text('Ödevler', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                      const Tab(
-                        icon: Icon(Icons.auto_awesome_rounded, size: 20),
-                        child: Text('Gelişim & Notlar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                      const Tab(
-                        icon: Icon(Icons.credit_card_rounded, size: 20),
-                        child: Text('Ödeme & IBAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
+                  Tab(
+                    icon: Icon(Icons.auto_awesome_rounded, size: 20),
+                    child: Text('Gelişim & Notlar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
-                );
-              },
+                  Tab(
+                    icon: Icon(Icons.credit_card_rounded, size: 20),
+                    child: Text('Ödeme & IBAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
             ),
 
             Expanded(
@@ -253,7 +227,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                 controller: _tabController,
                 children: <Widget>[
                   StudentScheduleTab(studentEmail: cleanEmail),
-                  StudentHomeworkTab(studentEmail: cleanEmail, studentName: displayName),
                   StudentFeedbackTab(studentEmail: cleanEmail),
                   StudentProfileTab(
                     studentEmail: cleanEmail,
