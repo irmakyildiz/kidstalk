@@ -340,12 +340,32 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                         ),
                       ],
                     ),
-                                  title,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: brandDark),
-                                ),
-                              ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        // ÜST BİLGİ SATIRI
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: <Widget>[
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F2F6),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                teacherName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandDark),
+                              ),
+                            ),
+                            Text(
+                              title,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: brandDark),
                             ),
                             Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
                                 const Icon(Icons.calendar_today_rounded, size: 13, color: Colors.grey),
                                 const SizedBox(width: 4),
