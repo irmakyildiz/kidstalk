@@ -16,14 +16,27 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Tüm Geçmişi Temizle'),
-        content: const Text('Tüm yanıtlanmış geçmiş öğretmen taleplerini silmek istediğinize emin misiniz?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: <Widget>[
+            Icon(Icons.delete_sweep_rounded, color: Colors.redAccent, size: 22),
+            SizedBox(width: 8),
+            Text('Tüm Geçmişi Temizle', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: const Text('Tüm yanıtlanmış geçmiş öğretmen taleplerini kalıcı olarak silmek istediğinize emin misiniz?'),
         actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('İptal')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Temizle', style: TextStyle(color: Colors.white)),
+            child: const Text('Tümünü Temizle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -34,11 +47,55 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
           .collection('teacher_requests')
           .where('status', whereIn: ['approved', 'rejected'])
           .get();
+      final batch = FirebaseFirestore.instance.batch();
       for (final doc in snap.docs) {
-        await doc.reference.delete();
+        batch.delete(doc.reference);
       }
+      await batch.commit();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geçmiş talepler temizlendi.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tüm geçmiş talepler başarıyla temizlendi.'), backgroundColor: Colors.green),
+        );
+      }
+    }
+  }
+
+  void _deleteSingleHistory(String docId, String title) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: <Widget>[
+            Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
+            SizedBox(width: 8),
+            Text('Geçmiş Talebi Sil', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Text('Bu geçmiş talebi ("$title") silmek istediğinize emin misiniz?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await FirebaseFirestore.instance.collection('teacher_requests').doc(docId).delete();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Talep geçmişten silindi.'), backgroundColor: Colors.green),
+        );
       }
     }
   }
@@ -263,6 +320,7 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final data = docs[index].data();
+                  final docId = docs[index].id;
                   final teacherName = data['teacherName'] ?? 'Öğretmen';
                   final title = data['title'] ?? data['type'] ?? 'Talep';
                   final desc = (data['description'] ?? data['note'] ?? '').toString();
@@ -319,7 +377,7 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                                   dateStr,
                                   style: const TextStyle(fontSize: 11.5, color: Colors.grey, fontWeight: FontWeight.w500),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: 10),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
@@ -344,6 +402,22 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                                         ),
                                       ),
                                     ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Tooltip(
+                                  message: 'Bu Talebi Geçmişten Sil',
+                                  child: InkWell(
+                                    onTap: () => _deleteSingleHistory(docId, '$teacherName - $title'),
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFECEE),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEB3B5A)),
+                                    ),
                                   ),
                                 ),
                               ],
