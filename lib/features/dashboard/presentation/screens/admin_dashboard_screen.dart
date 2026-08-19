@@ -90,7 +90,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           {'icon': Icons.school_rounded, 'title': 'Öğrenci Listesi', 'index': 2},
           {'icon': Icons.chat_bubble_outline_rounded, 'title': 'Talepler', 'index': 3, 'badge': unreadRequests},
           {'icon': Icons.table_chart_rounded, 'title': 'Genel Takvim', 'index': 4},
-          {'icon': Icons.chat_rounded, 'title': 'Otomatik Mesaj & API', 'index': 5},
+          {'icon': Icons.chat_rounded, 'title': 'Otomatik Mesaj', 'index': 5},
           {'icon': Icons.person_outline_rounded, 'title': 'Profilim', 'index': 6},
         ];
 

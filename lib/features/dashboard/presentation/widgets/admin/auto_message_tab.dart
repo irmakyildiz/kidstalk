@@ -57,6 +57,18 @@ class _AutoMessageTabState extends State<AutoMessageTab> {
     return d == target;
   }
 
+  static int _getTimeOrder(String time) {
+    try {
+      final firstPart = time.split('-').first.trim();
+      final timeParts = firstPart.split(':');
+      final hour = int.parse(timeParts[0].trim());
+      final minute = int.parse(timeParts[1].trim());
+      return hour * 60 + minute;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   void _showApiSettingsDialog() async {
     final settings = await WhatsAppService.getSettings();
     final TextEditingController instanceCtrl = TextEditingController(text: settings['instanceId'] ?? '');
@@ -258,6 +270,13 @@ class _AutoMessageTabState extends State<AutoMessageTab> {
                         // Tam gün eşleşmesi
                         return _isExactDayMatch(lDay);
                       }).toList();
+
+                      // Dersleri başlangıç saatine göre kronolojik olarak sırala
+                      docs.sort((a, b) {
+                        final timeA = (a.data()['time'] as String? ?? '').toString();
+                        final timeB = (b.data()['time'] as String? ?? '').toString();
+                        return _getTimeOrder(timeA).compareTo(_getTimeOrder(timeB));
+                      });
 
                       if (docs.isEmpty) {
                         return Container(
@@ -626,6 +645,13 @@ class _AutoMessageTabState extends State<AutoMessageTab> {
 
       return _isExactDayMatch(lDay);
     }).toList();
+
+    // Dersleri başlangıç saatine göre kronolojik olarak sırala
+    docs.sort((a, b) {
+      final timeA = (a.data()['time'] as String? ?? '').toString();
+      final timeB = (b.data()['time'] as String? ?? '').toString();
+      return _getTimeOrder(timeA).compareTo(_getTimeOrder(timeB));
+    });
 
     if (docs.isEmpty) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$_selectedDay günü için gönderilecek ders bulunamadı.')));
