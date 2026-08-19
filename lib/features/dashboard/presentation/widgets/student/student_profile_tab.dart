@@ -242,46 +242,13 @@ class _StudentProfileTabState extends State<StudentProfileTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Row(
-                          children: const <Widget>[
-                            Icon(Icons.account_balance_rounded, color: brandPink, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'Resmi Banka IBAN Bilgileri',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
-                            ),
-                          ],
+                      children: const <Widget>[
+                        Icon(Icons.account_balance_rounded, color: brandPink, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Resmi Banka IBAN Bilgileri',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
                         ),
-                        if (iban.isNotEmpty)
-                          InkWell(
-                            onTap: copyIban,
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE6F9F4),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFFB2EBDC)),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const <Widget>[
-                                  Icon(Icons.copy_rounded, color: Color(0xFF00B894), size: 14),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    'IBAN Bilgisini Kopyala',
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF00B894),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                     const SizedBox(height: 10),
