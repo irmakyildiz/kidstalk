@@ -9,307 +9,540 @@ class MasterCalendarTab extends StatefulWidget {
 }
 
 class _MasterCalendarTabState extends State<MasterCalendarTab> {
-  DateTime _selectedDate = DateTime.now();
-  String _selectedDayChip = 'Tümü';
+  String? _selectedTeacherId;
+  String _selectedTeacherName = '';
+  late DateTime _currentMonth;
+  final ScrollController _scrollController = ScrollController();
 
   static const Color brandPink = Color(0xFFFF5286);
-  static const Color brandOrange = Color(0xFFFF7A59);
   static const Color brandDark = Color(0xFF2C3E50);
 
-  final List<String> _days = <String>[
-    'Tümü',
-    'Pazartesi',
-    'Salı',
-    'Çarşamba',
-    'Perşembe',
-    'Cuma',
-    'Cumartesi',
-    'Pazar',
+  final List<String> _times = <String>[
+    '15:00 - 15:30',
+    '15:30 - 16:00',
+    '16:00 - 16:30',
+    '16:30 - 17:00',
+    '17:00 - 17:30',
+    '17:30 - 18:00',
+    '18:00 - 18:30',
+    '18:30 - 19:00',
+    '19:00 - 19:30',
+    '19:30 - 20:00',
+    '20:00 - 20:30',
+    '20:30 - 21:00',
+    '21:00 - 21:30',
+    '21:30 - 22:00',
   ];
 
-  final Map<int, String> _weekdayMap = {
-    1: 'Pazartesi',
-    2: 'Salı',
-    3: 'Çarşamba',
-    4: 'Perşembe',
-    5: 'Cuma',
-    6: 'Cumartesi',
-    7: 'Pazar',
-  };
+  @override
+  void initState() {
+    super.initState();
+    final DateTime now = DateTime.now();
+    _currentMonth = DateTime(now.year, now.month, 1);
 
-  final Map<int, String> _monthMap = {
-    1: 'Ocak',
-    2: 'Şubat',
-    3: 'Mart',
-    4: 'Nisan',
-    5: 'Mayıs',
-    6: 'Haziran',
-    7: 'Temmuz',
-    8: 'Ağustos',
-    9: 'Eylül',
-    10: 'Ekim',
-    11: 'Kasım',
-    12: 'Aralık',
-  };
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToToday();
+    });
+  }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: brandPink,
-              onPrimary: Colors.white,
-              onSurface: brandDark,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-        _selectedDayChip = _weekdayMap[picked.weekday] ?? 'Tümü';
-      });
+  void _scrollToToday() {
+    if (_scrollController.hasClients) {
+      final DateTime now = DateTime.now();
+      if (_currentMonth.year == now.year && _currentMonth.month == now.month) {
+        final double targetOffset = (now.day - 2) * 110.0;
+        if (targetOffset > 0) {
+          _scrollController.animateTo(
+            targetOffset,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      }
     }
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    return months[month - 1];
+  }
+
+  String _getDayName(DateTime date) {
+    const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+    return days[date.weekday - 1];
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final String formattedDate = '${_selectedDate.day} ${_monthMap[_selectedDate.month]} ${_selectedDate.year} (${_weekdayMap[_selectedDate.weekday]})';
+    final DateTime now = DateTime.now();
+    final DateTime currentMonthStart = DateTime(now.year, now.month, 1);
+    final bool canGoNext = _currentMonth.isBefore(currentMonthStart);
+
+    final int daysInMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+    final List<DateTime> monthDays = List.generate(
+      daysInMonth,
+      (i) => DateTime(_currentMonth.year, _currentMonth.month, i + 1),
+    );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(28.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text('Takvim', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: brandDark)),
+          const Text('Geçmiş Ders Kayıtları & Takvim', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandDark)),
           const SizedBox(height: 4),
-          const Text('Tarih, ay ve yıl bazında kurum genelindeki tüm dersleri canlı takip edin.', style: TextStyle(color: Colors.grey, fontSize: 13)),
-          const SizedBox(height: 16),
+          const Text('Seçilen öğretmenin geçmiş ve güncel tamamlanan ders loglarını takip edin.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 20),
 
-          // TARİH SEÇİCİ VE YIL/AY NAVİGASYON KARTI
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: <Widget>[
-                  const CircleAvatar(
-                    backgroundColor: brandPink,
-                    child: Icon(Icons.calendar_month_rounded, color: Colors.white),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        const Text('Seçili Tarih', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w600)),
-                        Text(formattedDate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandDark)),
-                      ],
+          // ÖĞRETMEN SEÇİMİ KARTI (EN BAŞTA ÖĞRETMEN SEÇİNİZ DURUMU)
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'teacher').snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const LinearProgressIndicator();
+              final docs = snapshot.data!.docs;
+
+              if (docs.isEmpty) {
+                return const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Kayıtlı öğretmen bulunamadı.')));
+              }
+
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7F8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFE3E8)),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: brandPink,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.people_alt_rounded, color: Colors.white, size: 18),
                     ),
-                  ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: brandPink,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    const SizedBox(width: 12),
+                    const Text('Öğretmen Seçin:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: brandDark)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Container(
+                        height: 42,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String?>(
+                            value: _selectedTeacherId,
+                            hint: const Row(
+                              children: <Widget>[
+                                Icon(Icons.person_search_rounded, color: Colors.grey, size: 18),
+                                SizedBox(width: 8),
+                                Text('Öğretmen Seçiniz...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                              ],
+                            ),
+                            isExpanded: true,
+                            items: [
+                              const DropdownMenuItem<String?>(
+                                value: null,
+                                child: Row(
+                                  children: <Widget>[
+                                    Icon(Icons.person_search_rounded, color: Colors.grey, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('Öğretmen Seçiniz...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                              ...docs.map((d) {
+                                final name = d.data()['fullName'] ?? d.data()['name'] ?? d.id;
+                                return DropdownMenuItem<String?>(
+                                  value: d.id,
+                                  child: Row(
+                                    children: <Widget>[
+                                      const Icon(Icons.school_rounded, color: Color(0xFF20BF6B), size: 18),
+                                      const SizedBox(width: 8),
+                                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) {
+                                final doc = docs.firstWhere((d) => d.id == val);
+                                setState(() {
+                                  _selectedTeacherId = val;
+                                  _selectedTeacherName = doc.data()['fullName'] ?? doc.data()['name'] ?? val;
+                                });
+                                WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToToday());
+                              } else {
+                                setState(() {
+                                  _selectedTeacherId = null;
+                                  _selectedTeacherName = '';
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ),
                     ),
-                    icon: const Icon(Icons.edit_calendar_rounded, color: Colors.white, size: 18),
-                    label: const Text('Tarih / Ay Seç', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    onPressed: () => _selectDate(context),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+
+          // ÖĞRETMEN SEÇİLMEDİYSE UYARI KUTUSU
+          if (_selectedTeacherId == null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE8ECEF)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.calendar_month_rounded, size: 48, color: brandPink.withOpacity(0.4)),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Lütfen ders kayıtlarını görüntülemek için bir öğretmen seçiniz.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Öğretmen seçildiğinde takvim tablosunda tamamlanan dersler, planlı dersler ve mola saatleri listelenecektir.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
 
-          // GÜN SEÇİM CHIPLERİ
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _days.map((day) {
-                final bool isSelected = _selectedDayChip == day;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text(day),
-                    selected: isSelected,
-                    selectedColor: brandPink,
-                    labelStyle: TextStyle(color: isSelected ? Colors.white : brandDark, fontWeight: FontWeight.bold),
-                    onSelected: (sel) {
-                      if (sel) setState(() => _selectedDayChip = day);
-                    },
+          // ÖĞRETMEN SEÇİLİYSE AY NAVİGASYONU VE TAKVİM TABLOSU
+          if (_selectedTeacherId != null) ...[
+            // AY NAVİGASYONU (BİR SONRAKİ AY KİLİTLİ)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7F8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFFFE3E8)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_rounded, color: brandPink, size: 18),
+                    tooltip: 'Önceki Ay',
+                    onPressed: () => setState(() {
+                      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1, 1);
+                    }),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // FIRESTORE CANLI DERS SORGUSU
-          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance.collection('lessons').snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: brandPink));
-              }
-
-              final allDocs = snapshot.data?.docs ?? [];
-              var filteredDocs = allDocs.where((doc) {
-                final data = doc.data();
-                final String status = data['status'] as String? ?? 'planned';
-                // Takvimde molaları göster me, sadece işlenecek gerçek dersleri göster
-                if (status == 'busy') return false;
-                if (_selectedDayChip == 'Tümü') return true;
-                return data['day'] == _selectedDayChip;
-              }).toList();
-
-              // Mükerrer dersleri engelle (Aynı öğretmen + öğrenci + gün + saat)
-              final List<QueryDocumentSnapshot<Map<String, dynamic>>> uniqueDocs = [];
-              final Set<String> seenKeys = <String>{};
-
-              for (final doc in filteredDocs) {
-                final data = doc.data();
-                final String key = '${data["teacherId"]}_${data["studentId"]}_${data["day"]}_${data["time"]}';
-                if (!seenKeys.contains(key)) {
-                  seenKeys.add(key);
-                  uniqueDocs.add(doc);
-                }
-              }
-
-              // SAAT SIRASINA GÖRE DİZ (09:00 -> 18:00)
-              uniqueDocs.sort((a, b) {
-                final String timeA = a.data()['time'] as String? ?? '';
-                final String timeB = b.data()['time'] as String? ?? '';
-                return timeA.compareTo(timeB);
-              });
-
-              if (uniqueDocs.isEmpty) {
-                return Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: Center(
-                      child: Column(
-                        children: <Widget>[
-                          const Icon(Icons.event_available_rounded, size: 48, color: Colors.grey),
-                          const SizedBox(height: 12),
-                          Text('$_selectedDayChip günü için planlanmış ders bulunmuyor.', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
+                  Text(
+                    '📊 Geçmiş Ders Kayıtları - ${_getMonthName(_currentMonth.month)} ${_currentMonth.year}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      canGoNext ? Icons.arrow_forward_ios_rounded : Icons.lock_outline_rounded,
+                      color: canGoNext ? brandPink : Colors.grey.shade400,
+                      size: 18,
                     ),
+                    tooltip: canGoNext ? 'Sonraki Ay' : 'Bir sonraki ay kilitlidir',
+                    onPressed: canGoNext
+                        ? () => setState(() {
+                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
+                            })
+                        : null,
                   ),
-                );
-              }
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: uniqueDocs.length,
-                itemBuilder: (context, index) {
-                  final data = uniqueDocs[index].data();
-                  final String teacherName = data['teacherName'] as String? ?? 'Öğretmen';
-                  final String studentName = data['studentName'] as String? ?? 'Öğrenci';
-                  final String day = data['day'] as String? ?? '';
-                  final String time = data['time'] as String? ?? '';
-                  final String status = data['status'] as String? ?? 'planned';
-                  final String parentPhone = data['parentPhone'] as String? ?? '';
+            // TAKVİM MATRİSİ (YATAY KAYDIRILABİLİR TABLO & KAYDIRMA ÇUBUĞU)
+            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance.collection('completed_lessons').snapshots(),
+              builder: (context, completedSnapshot) {
+                final completedDocs = completedSnapshot.data?.docs ?? [];
 
-                  final bool isBusy = status == 'busy';
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance.collection('lessons').snapshots(),
+                  builder: (context, snapshot) {
+                    final lessonsDocs = snapshot.data?.docs ?? [];
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: Container(
+                    return Container(
                       decoration: BoxDecoration(
-                        border: Border(
-                          left: BorderSide(
-                            color: isBusy ? Colors.amber : brandPink,
-                            width: 6,
-                          ),
-                        ),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE8ECEF)),
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        title: Row(
-                          children: <Widget>[
-                            Text(
-                              '⏰ $time',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: brandDark),
-                            ),
-                            const SizedBox(width: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: isBusy ? Colors.amber.shade100 : brandPink.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                day,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: isBusy ? Colors.amber.shade900 : brandPink,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  const Icon(Icons.school, size: 16, color: Colors.grey),
-                                  const SizedBox(width: 6),
-                                  Text('Öğretmen: $teacherName', style: const TextStyle(fontWeight: FontWeight.w600, color: brandDark)),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: <Widget>[
-                                  Icon(isBusy ? Icons.block : Icons.person, size: 16, color: isBusy ? Colors.amber.shade800 : Colors.blue),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isBusy ? 'MEŞGUL / MOLA' : 'Öğrenci: $studentName',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: isBusy ? Colors.amber.shade900 : Colors.blue.shade800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (!isBusy && parentPhone.isNotEmpty) ...<Widget>[
-                                const SizedBox(height: 4),
-                                Row(
+                      child: Scrollbar(
+                        controller: _scrollController,
+                        thumbVisibility: true,
+                        trackVisibility: true,
+                        child: SingleChildScrollView(
+                          controller: _scrollController,
+                          scrollDirection: Axis.horizontal,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Table(
+                              defaultColumnWidth: const FixedColumnWidth(110.0),
+                              columnWidths: const {
+                                0: FixedColumnWidth(100.0),
+                              },
+                              border: TableBorder.all(color: const Color(0xFFEEEEEE), width: 1),
+                              children: <TableRow>[
+                                // BAŞLIK SATIRI (Time / Days + Tarihler)
+                                TableRow(
+                                  decoration: const BoxDecoration(color: Color(0xFFF9FAFC)),
                                   children: <Widget>[
-                                    const Icon(Icons.phone, size: 15, color: Colors.green),
-                                    const SizedBox(width: 6),
-                                    Text('Veli Tel: $parentPhone', style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w600)),
+                                    const Padding(
+                                      padding: EdgeInsets.all(10.0),
+                                      child: Center(
+                                        child: Text('Time / Days', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: brandDark)),
+                                      ),
+                                    ),
+                                    ...monthDays.map((d) {
+                                      final String dayStr = d.day.toString().padLeft(2, '0');
+                                      final String monthStr = d.month.toString().padLeft(2, '0');
+                                      final String dateStr = '$dayStr/$monthStr/${d.year}';
+                                      final dayName = _getDayName(d);
+                                      final bool isToday = d.year == now.year && d.month == now.month && d.day == now.day;
+
+                                      return Container(
+                                        color: isToday ? const Color(0xFFFFF0F3) : Colors.transparent,
+                                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                                        child: Column(
+                                          children: <Widget>[
+                                            Text(dateStr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: isToday ? brandPink : brandDark)),
+                                            const SizedBox(height: 2),
+                                            Text(dayName, style: TextStyle(fontSize: 9, color: isToday ? brandPink : Colors.grey, fontWeight: isToday ? FontWeight.bold : FontWeight.normal)),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
                                   ],
                                 ),
+
+                                // SAAT SATIRLARI
+                                ..._times.map((time) {
+                                  return TableRow(
+                                    children: <Widget>[
+                                      TableCell(
+                                        verticalAlignment: TableCellVerticalAlignment.fill,
+                                        child: Container(
+                                          color: const Color(0xFFF9FAFC),
+                                          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            time,
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: brandDark),
+                                          ),
+                                        ),
+                                      ),
+                                      ...monthDays.map((d) {
+                                        final String dayStr = d.day.toString().padLeft(2, '0');
+                                        final String monthStr = d.month.toString().padLeft(2, '0');
+                                        final String dateStr = '$dayStr/$monthStr/${d.year}';
+                                        final String dayName = _getDayName(d);
+                                        final bool isPastDay = d.isBefore(DateTime(now.year, now.month, now.day));
+
+                                        // 1. ÖNCELİK: Bu tarihte tamamlanmış ders var mı? (completed_lessons)
+                                        final completedMatch = completedDocs.where((doc) {
+                                          final data = doc.data();
+                                          final tId = (data['teacherId'] ?? '').toString().toLowerCase().trim();
+                                          final tName = (data['teacherName'] ?? '').toString().toLowerCase().trim();
+                                          final cDate = data['date'] ?? '';
+                                          final cTime = data['time'] ?? '';
+                                          final targetTeacherId = (_selectedTeacherId ?? '').toLowerCase().trim();
+                                          final targetTeacherName = (_selectedTeacherName).toLowerCase().trim();
+
+                                          final bool teacherMatches = (targetTeacherId.isNotEmpty && (tId == targetTeacherId || tId.contains(targetTeacherId) || targetTeacherId.contains(tId))) ||
+                                              (targetTeacherName.isNotEmpty && (tName == targetTeacherName || tName.contains(targetTeacherName) || targetTeacherName.contains(tName)));
+
+                                          return teacherMatches && cDate == dateStr && cTime == time;
+                                        }).toList();
+
+                                        if (completedMatch.isNotEmpty) {
+                                          final stName = completedMatch.first.data()['studentName'] ?? 'Öğrenci';
+                                          return TableCell(
+                                            verticalAlignment: TableCellVerticalAlignment.fill,
+                                            child: Container(
+                                              color: const Color(0xFFD4EDDA), // YEŞİL TAMAMLANMIŞ DERS
+                                              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
+                                              child: Center(
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      stName,
+                                                      textAlign: TextAlign.center,
+                                                      style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF155724)),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                    const SizedBox(height: 1),
+                                                    const Text(
+                                                      '✓ Tamamlandı',
+                                                      textAlign: TextAlign.center,
+                                                      style: TextStyle(fontSize: 8.0, fontWeight: FontWeight.w700, color: Color(0xFF155724)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+
+                                        // 2. HAFTALIK CANLI PROGRAM EŞLEŞTİRMESİ
+                                        final matchDoc = lessonsDocs.where((doc) {
+                                          final data = doc.data();
+                                          final tId = (data['teacherId'] ?? '').toString().toLowerCase().trim();
+                                          final tName = (data['teacherName'] ?? '').toString().toLowerCase().trim();
+                                          final lDay = (data['day'] ?? '').toString().toLowerCase().trim();
+                                          final lTime = (data['time'] ?? '').toString().trim();
+                                          final targetTeacherId = (_selectedTeacherId ?? '').toLowerCase().trim();
+                                          final targetTeacherName = (_selectedTeacherName).toLowerCase().trim();
+
+                                          final bool teacherMatches = (targetTeacherId.isNotEmpty && (tId == targetTeacherId || tId.contains(targetTeacherId) || targetTeacherId.contains(tId))) ||
+                                              (targetTeacherName.isNotEmpty && (tName == targetTeacherName || tName.contains(targetTeacherName) || targetTeacherName.contains(tName)));
+
+                                          if (!teacherMatches || lDay != dayName.toLowerCase() || lTime != time) {
+                                            return false;
+                                          }
+
+                                          // Demo dersi tek seferliktir: Yalnızca atandığı kesin tarihin hücresinde görünür, diğer haftalarda slot boş kalır:
+                                          final bool isDemo = data['isDemo'] == true || data['status'] == 'demo';
+                                          if (isDemo) {
+                                            final String? demoKey = data['demoDateKey'] as String?;
+                                            if (demoKey != null && demoKey.isNotEmpty) {
+                                              final String curDayKey = '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+                                              if (demoKey != curDayKey) {
+                                                return false;
+                                              }
+                                            }
+                                          }
+
+                                          return true;
+                                        }).toList();
+
+                                        Color bgColor = const Color(0xFFEEF9F1);
+                                        Color textColor = const Color(0xFF2E7D32);
+                                        String label = 'Müsait';
+                                        String? subLabel;
+
+                                        if (matchDoc.isNotEmpty) {
+                                          final data = matchDoc.first.data();
+                                          final status = data['status'] ?? 'planned';
+                                          final isDemo = data['isDemo'] == true || status == 'demo';
+                                          final isBusy = status == 'busy';
+                                          final student = data['studentName'] ?? '';
+
+                                          if (isPastDay) {
+                                            // GEÇMİŞ GÜN VE TAMAMLANMAMIŞ DERS: AÇIK GRİ GÖRÜNÜR
+                                            bgColor = const Color(0xFFF1F2F6);
+                                            textColor = const Color(0xFF57606F);
+                                            if (isBusy) {
+                                              label = 'Meşgul';
+                                            } else if (isDemo) {
+                                              label = student.isNotEmpty ? 'Demo: $student' : 'Demo';
+                                            } else if (student.isNotEmpty) {
+                                              label = student;
+                                            }
+                                            subLabel = '(Geçmiş)';
+                                          } else {
+                                            // BUGÜN VEYA GELECEK GÜNLER:
+                                            if (isBusy) {
+                                              bgColor = const Color(0xFFFFF8E7);
+                                              textColor = const Color(0xFFD97706);
+                                              label = 'Meşgul';
+                                            } else if (isDemo) {
+                                              bgColor = const Color(0xFFE8F4FD);
+                                              textColor = const Color(0xFF0288D1);
+                                              label = student.isNotEmpty ? 'Demo: $student' : 'Demo';
+                                            } else if (student.isNotEmpty) {
+                                              bgColor = const Color(0xFFFFF0F3);
+                                              textColor = brandPink;
+                                              label = student;
+                                            }
+                                          }
+                                        } else {
+                                          // BOŞ MÜSAİT SLOT
+                                          if (isPastDay) {
+                                            bgColor = const Color(0xFFF8F9FA);
+                                            textColor = const Color(0xFFA4B0BE);
+                                            label = 'Müsait';
+                                          } else {
+                                            bgColor = const Color(0xFFEEF9F1);
+                                            textColor = const Color(0xFF2E7D32);
+                                            label = 'Müsait';
+                                          }
+                                        }
+
+                                        return TableCell(
+                                          verticalAlignment: TableCellVerticalAlignment.fill,
+                                          child: Container(
+                                            color: bgColor,
+                                            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 3.0),
+                                            child: Center(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: <Widget>[
+                                                  Text(
+                                                    label,
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: textColor),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  if (subLabel != null) ...<Widget>[
+                                                    const SizedBox(height: 1),
+                                                    Text(
+                                                      subLabel,
+                                                      textAlign: TextAlign.center,
+                                                      style: TextStyle(fontSize: 8.0, fontWeight: FontWeight.w600, color: textColor.withOpacity(0.85)),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ],
+                                  );
+                                }).toList(),
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
         ],
       ),
     );

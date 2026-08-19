@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../auth/data/auth_repository.dart';
@@ -26,9 +27,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
   late TabController _tabController;
   final AuthRepository _authRepository = AuthRepository();
 
-  static const Color brandPink = Color(0xFFFF5286);
-  static const Color brandOrange = Color(0xFFFF7A59);
-  static const Color brandYellow = Color(0xFFFFD43B);
+  static const Color brandPink = Color(0xFFFF3366);
+  static const Color brandOrange = Color(0xFFFF6F43);
+  static const Color brandYellow = Color(0xFFFFB800);
   static const Color brandDark = Color(0xFF2C3E50);
 
   Map<String, dynamic>? _studentProfileData;
@@ -60,16 +61,20 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final String cleanEmail = widget.studentEmail ?? _authRepository.currentUser?.email ?? '';
-    final String displayName = _studentProfileData?['fullName'] ?? widget.studentName;
+    final String cleanEmail = (widget.studentEmail ?? _authRepository.currentUser?.email ?? '').trim().toLowerCase();
+    final String displayName = (_studentProfileData?['fullName'] ?? widget.studentName).toString().trim();
+    final String parentName = (_studentProfileData?['parentName'] ?? '').toString().trim();
+    final String teacherName = (_studentProfileData?['assignedTeacherName'] ?? _studentProfileData?['teacherName'] ?? 'Robin').toString().trim();
+    final String currentBook = (_studentProfileData?['currentBook'] ?? 'Kids Box (1-Welcome)').toString().trim();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: <Widget>[
+            // HEADER BAR (GRADIENT)
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: <Color>[brandPink, brandOrange, brandYellow],
@@ -90,16 +95,42 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text('${AppStrings.get("welcome")}, $displayName 👋', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2),
+                        Text(
+                          'Hoş Geldiniz, Sayın ${parentName.isNotEmpty ? parentName : displayName}',
+                          style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 3),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(10)),
-                          child: Text(AppStrings.get('studentPortal'), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                          child: const Text('Veli & Öğrenci Portalı', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                         ),
                       ],
                     ),
                   ),
+
+                  // AKTİF ÖĞRENCİ SEÇİCİ
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(Icons.people_alt_rounded, color: Color(0xFFFF5286), size: 16),
+                        const SizedBox(width: 6),
+                        const Text('Aktif Öğrenci: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: brandDark)),
+                        const Icon(Icons.face_rounded, color: Color(0xFFFF7A59), size: 16),
+                        const SizedBox(width: 4),
+                        Text(displayName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: brandDark)),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey, size: 18),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
 
                   IconButton(
                     icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 26),
@@ -112,80 +143,123 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen>
               ),
             ),
 
-            _buildQuickStats(),
-
-            Container(
-              color: Colors.white,
-              child: TabBar(
-                controller: _tabController,
-                labelColor: brandPink,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: brandPink,
-                indicatorWeight: 3,
-                tabs: const <Widget>[
-                  Tab(icon: Icon(Icons.video_call_rounded), text: 'Dersim & Zoom'),
-                  Tab(icon: Icon(Icons.calendar_month_rounded), text: 'Ders Programı'),
-                  Tab(icon: Icon(Icons.auto_graph_rounded), text: 'Gelişim & Notlar'),
-                  Tab(icon: Icon(Icons.settings_rounded), text: 'Profil & Güvenlik'),
-                ],
+            // TOP STUDENT INFO BANNER (MATCHING SCREENSHOT 1, 2, 3)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 14.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF0F3),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFFDDE5), width: 1.2),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                        color: brandPink,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Öğrenci: $displayName • Öğretmen: $teacherName',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: brandDark),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE1F5FE),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Kitap: $currentBook',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0984E3)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ),
+
+            // 4 TABS (DERS PROGRAMI, ÖDEVLER, GELİŞİM & NOTLAR, ÖDEME & IBAN)
+            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: cleanEmail.isNotEmpty
+                  ? FirebaseFirestore.instance.collection('homeworks').where('studentId', isEqualTo: cleanEmail).snapshots()
+                  : FirebaseFirestore.instance.collection('homeworks').snapshots(),
+              builder: (context, snapshot) {
+                final docs = snapshot.data?.docs ?? [];
+                int unreadCount = 0;
+                for (final d in docs) {
+                  final data = d.data();
+                  final bool isRead = data['isRead'] as bool? ?? false;
+                  if (!isRead) {
+                    unreadCount++;
+                  }
+                }
+
+                return Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1.0)),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    labelColor: brandPink,
+                    unselectedLabelColor: const Color(0xFF757575),
+                    indicatorColor: brandPink,
+                    indicatorWeight: 3,
+                    tabs: <Widget>[
+                      const Tab(
+                        icon: Icon(Icons.calendar_month_rounded, size: 20),
+                        child: Text('Ders Programı', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                      Tab(
+                        icon: Badge(
+                          isLabelVisible: unreadCount > 0,
+                          label: Text('$unreadCount', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                          backgroundColor: Colors.redAccent,
+                          child: const Icon(Icons.assignment_rounded, size: 20),
+                        ),
+                        child: const Text('Ödevler', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                      const Tab(
+                        icon: Icon(Icons.auto_awesome_rounded, size: 20),
+                        child: Text('Gelişim & Notlar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                      const Tab(
+                        icon: Icon(Icons.credit_card_rounded, size: 20),
+                        child: Text('Ödeme & IBAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
 
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: <Widget>[
-                  StudentZoomTab(studentProfileData: _studentProfileData),
                   StudentScheduleTab(studentEmail: cleanEmail),
+                  StudentHomeworkTab(studentEmail: cleanEmail, studentName: displayName),
                   StudentFeedbackTab(studentEmail: cleanEmail),
-                  StudentProfileTab(studentEmail: cleanEmail, onLanguageChanged: (lang) => setState(() => AppStrings.currentLang = lang)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickStats() {
-    final String currentBook = _studentProfileData?['currentBook'] ?? 'Kids Box 2';
-    final String teacherName = _studentProfileData?['assignedTeacherName'] ?? 'Atanıyor...';
-
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: <Widget>[
-          _buildStatCard('İşlenen Kitap', currentBook, Icons.menu_book_rounded, Colors.green),
-          const SizedBox(width: 10),
-          _buildStatCard('Öğretmeniniz', teacherName, Icons.person_rounded, Colors.blue),
-          const SizedBox(width: 10),
-          _buildStatCard('Paket Tipi', 'Bireysel', Icons.star_rounded, Colors.amber),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.2)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(title, style: TextStyle(fontSize: 10, color: Colors.grey.shade700)),
-                  Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: brandDark), overflow: TextOverflow.ellipsis),
+                  StudentProfileTab(
+                    studentEmail: cleanEmail,
+                    studentProfileData: _studentProfileData,
+                    onLanguageChanged: (lang) => setState(() => AppStrings.currentLang = lang),
+                  ),
                 ],
               ),
             ),

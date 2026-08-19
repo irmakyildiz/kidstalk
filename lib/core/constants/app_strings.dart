@@ -1,14 +1,16 @@
+import 'package:flutter/material.dart';
+
 class AppStrings {
   static String currentLang = 'tr'; // 'tr' veya 'en'
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'tr': {
-      'loginTitle': 'Giriş Yap',
-      'loginSubtitle': 'Kullanıcı adı ve şifrenizle giriş yapınız.',
+      'loginTitle': 'Bilgi Yönetim Sistemi',
+      'loginSubtitle': 'Size WhatsApp üzerinden iletilen kullanıcı adı ve şifrenizle giriş yapınız.',
       'emailHint': 'E-Posta / Kullanıcı Adı',
       'passwordHint': 'Şifre',
       'loginButton': 'Giriş Yap',
-      'forgotPassword': 'Şifremi Unuttum / Destek',
+      'forgotPassword': 'Şifremi Unuttum',
       'welcome': 'Hoş Geldiniz',
       'teacherPortal': 'Öğretmen Paneli',
       'studentPortal': 'Öğrenci Paneli',
@@ -29,7 +31,7 @@ class AppStrings {
       'emailHint': 'Email / Username',
       'passwordHint': 'Password',
       'loginButton': 'Log In',
-      'forgotPassword': 'Forgot Password / Support',
+      'forgotPassword': 'Forgot Password',
       'welcome': 'Welcome',
       'teacherPortal': 'Teacher Portal',
       'studentPortal': 'Student Portal',
@@ -76,7 +78,8 @@ class AppStrings {
     'Kaydet': 'Save',
     'Planlandı': 'Planned',
     'Dersi Tamamladım': 'Mark Lesson Complete',
-    'Canlı Derse Katıl (Zoom)': 'Join Live Class (Zoom)',
+    'Canlı Derse Katıl (Zoom)': 'Join Live Class',
+    'Canlı Derse Katıl': 'Join Live Class',
     'Seviye:': 'Level:',
     'İşlenen Kitap:': 'Covered Book:',
     'Son Ünite:': 'Current Unit:',
@@ -117,5 +120,50 @@ class AppStrings {
   static String tr(String text) {
     if (currentLang == 'tr') return text;
     return _trToEnMap[text] ?? text;
+  }
+}
+
+/// Helper utility for responsive font scaling, padding, and layout breakpoints.
+class Responsive {
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < 650;
+
+  static bool isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 650 &&
+      MediaQuery.of(context).size.width < 1050;
+
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1050;
+
+  /// Returns a responsive font size based on screen width.
+  static double fontSize(BuildContext context, double baseSize) {
+    final double width = MediaQuery.of(context).size.width;
+    double scale = 1.0;
+    if (width < 400) {
+      scale = 0.78;
+    } else if (width < 650) {
+      scale = 0.85;
+    } else if (width < 950) {
+      scale = 0.92;
+    }
+
+    final double minSize = baseSize * 0.72;
+    return (baseSize * scale).clamp(minSize, baseSize);
+  }
+
+  /// Returns responsive EdgeInsets padding.
+  static EdgeInsets padding(
+    BuildContext context, {
+    double desktop = 24.0,
+    double tablet = 16.0,
+    double mobile = 12.0,
+  }) {
+    final double width = MediaQuery.of(context).size.width;
+    if (width < 650) {
+      return EdgeInsets.all(mobile);
+    } else if (width < 1050) {
+      return EdgeInsets.all(tablet);
+    }
+    return EdgeInsets.all(desktop);
   }
 }

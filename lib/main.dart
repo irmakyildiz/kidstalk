@@ -29,7 +29,9 @@ class KidsTalkApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFFF5286)),
         useMaterial3: true,
       ),
-      home: const AuthWrapper(),
+      home: const SelectionArea(
+        child: AuthWrapper(),
+      ),
     );
   }
 }
@@ -66,17 +68,36 @@ class AuthWrapper extends StatelessWidget {
               );
             }
 
-            final Map<String, dynamic> data = profileSnapshot.data?.data() ?? <String, dynamic>{};
             final String cleanEmail = (user.email ?? '').toLowerCase().trim();
+            final bool isAdminEmail = AuthRepository.adminEmails.contains(cleanEmail) || cleanEmail == 'irmakyildiz' || cleanEmail == 'irmakyildiz@kidstalk.online';
+
+            if (!profileSnapshot.hasData || profileSnapshot.data == null || !profileSnapshot.data!.exists || profileSnapshot.data!.data() == null) {
+              if (!isAdminEmail) {
+                FirebaseAuth.instance.signOut();
+                return const LoginScreen();
+              }
+            }
+
+            final Map<String, dynamic> data = profileSnapshot.data?.data() ?? <String, dynamic>{};
+            final String status = (data['status'] as String? ?? 'active').toLowerCase();
+            if (status == 'inactive' || status == 'disabled' || status == 'suspended') {
+              FirebaseAuth.instance.signOut();
+              return const LoginScreen();
+            }
 
             final String role = (data['role'] as String?) ??
-                (AuthRepository.adminEmails.contains(cleanEmail) ? 'admin' : 'student');
+                (isAdminEmail ? 'admin' : 'student');
             final String fullName = (data['fullName'] as String?) ?? (data['name'] as String?) ?? user.displayName ?? cleanEmail;
+
+            final String? exactStudentId = (role == 'student' || role == 'parent_student')
+                ? profileSnapshot.data?.id
+                : (role == 'teacher' ? profileSnapshot.data?.id : null);
 
             return HomeScreen(
               role: role,
               fullName: fullName,
               email: cleanEmail,
+              loggedInStudentId: exactStudentId,
             );
           },
         );

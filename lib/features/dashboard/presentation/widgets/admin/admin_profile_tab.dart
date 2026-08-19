@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../../../../../core/constants/app_strings.dart';
 import '../../../../auth/data/auth_repository.dart';
 import '../../../data/admin_repository.dart';
 
@@ -19,30 +18,19 @@ class AdminProfileTab extends StatefulWidget {
 }
 
 class _AdminProfileTabState extends State<AdminProfileTab> {
-  final AuthRepository _authRepository = AuthRepository();
   final AdminRepository _adminRepository = AdminRepository();
 
-  // Admin İsim Soyisim Kontrolcüsü
   late TextEditingController _nameController;
+  final TextEditingController _accountHolderController = TextEditingController();
+  final TextEditingController _ibanController = TextEditingController();
 
-  // Şifre Değiştirme Kontrolcüleri
-  final TextEditingController _oldPassCtrl = TextEditingController();
-  final TextEditingController _newPassCtrl = TextEditingController();
-  final TextEditingController _confirmPassCtrl = TextEditingController();
+  final TextEditingController _newAdminNameController = TextEditingController();
+  final TextEditingController _newAdminEmailController = TextEditingController();
+  final TextEditingController _newAdminUsernameController = TextEditingController();
+  final TextEditingController _newAdminPasswordController = TextEditingController();
 
-  // Şirket IBAN Kontrolcüleri
-  final TextEditingController _bankNameCtrl = TextEditingController();
-  final TextEditingController _ibanCtrl = TextEditingController();
-  final TextEditingController _accountHolderCtrl = TextEditingController();
-
-  // Yeni Yönetici (Admin) Kontrolcüleri
-  final TextEditingController _newAdminNameCtrl = TextEditingController();
-  final TextEditingController _newAdminEmailCtrl = TextEditingController();
-  final TextEditingController _newAdminPassCtrl = TextEditingController();
-
-  bool _isLoadingIban = true;
-  bool _isSavingIban = false;
   bool _isSavingName = false;
+  bool _isSavingIban = false;
   bool _isCreatingAdmin = false;
 
   static const Color brandPink = Color(0xFFFF5286);
@@ -53,461 +41,590 @@ class _AdminProfileTabState extends State<AdminProfileTab> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.adminName);
-    _loadCompanyIban();
+    _loadIbanSettings();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _oldPassCtrl.dispose();
-    _newPassCtrl.dispose();
-    _confirmPassCtrl.dispose();
-    _bankNameCtrl.dispose();
-    _ibanCtrl.dispose();
-    _accountHolderCtrl.dispose();
-    _newAdminNameCtrl.dispose();
-    _newAdminEmailCtrl.dispose();
-    _newAdminPassCtrl.dispose();
+    _accountHolderController.dispose();
+    _ibanController.dispose();
+    _newAdminNameController.dispose();
+    _newAdminEmailController.dispose();
+    _newAdminUsernameController.dispose();
+    _newAdminPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadCompanyIban() async {
-    try {
-      final doc = await FirebaseFirestore.instance.collection('settings').doc('company_iban').get();
-      if (doc.exists && mounted) {
-        final data = doc.data();
-        setState(() {
-          _bankNameCtrl.text = data?['bankName'] as String? ?? 'Garanti BBVA';
-          _ibanCtrl.text = data?['iban'] as String? ?? 'TR12 0006 2000 0000 1234 5678 90';
-          _accountHolderCtrl.text = data?['accountHolder'] as String? ?? 'Kids Talk Online Eğitim Hizmetleri Ltd.';
-          _isLoadingIban = false;
-        });
-      } else {
-        setState(() {
-          _bankNameCtrl.text = 'Garanti BBVA';
-          _ibanCtrl.text = 'TR12 0006 2000 0000 1234 5678 90';
-          _accountHolderCtrl.text = 'Kids Talk Online Eğitim Hizmetleri Ltd.';
-          _isLoadingIban = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingIban = false);
+  Future<void> _loadIbanSettings() async {
+    final doc = await FirebaseFirestore.instance.collection('settings').doc('company_iban').get();
+    if (doc.exists && mounted) {
+      setState(() {
+        _accountHolderController.text = doc.data()?['accountHolder'] ?? '';
+        _ibanController.text = doc.data()?['iban'] ?? '';
+      });
     }
   }
 
-  Future<void> _saveAdminName() async {
-    if (_nameController.text.trim().isEmpty) return;
+  void _saveName() async {
     setState(() => _isSavingName = true);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(widget.adminEmail.toLowerCase()).set({
+        'fullName': _nameController.text.trim(),
+      }, SetOptions(merge: true));
 
-    final String cleanEmail = widget.adminEmail.trim().toLowerCase();
-    await FirebaseFirestore.instance.collection('users').doc(cleanEmail).set({
-      'fullName': _nameController.text.trim(),
-      'role': 'admin',
-    }, SetOptions(merge: true));
-
-    if (mounted) {
-      setState(() => _isSavingName = false);
-      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Yönetici adınız güncellendi!'), backgroundColor: Colors.green));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yönetici adı güncellendi!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.redAccent));
+    } finally {
+      if (mounted) setState(() => _isSavingName = false);
     }
   }
 
-  Future<void> _saveCompanyIban() async {
+  void _saveIban() async {
     setState(() => _isSavingIban = true);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    try {
+      await FirebaseFirestore.instance.collection('settings').doc('company_iban').set({
+        'accountHolder': _accountHolderController.text.trim(),
+        'iban': _ibanController.text.trim(),
+      }, SetOptions(merge: true));
 
-    await FirebaseFirestore.instance.collection('settings').doc('company_iban').set({
-      'bankName': _bankNameCtrl.text.trim(),
-      'iban': _ibanCtrl.text.trim(),
-      'accountHolder': _accountHolderCtrl.text.trim(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    if (mounted) {
-      setState(() => _isSavingIban = false);
-      scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Kurum IBAN bilgileri kaydedildi ve Veli panellerine yansıtıldı!'), backgroundColor: Colors.green));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Şirket IBAN bilgileri güncellendi!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.redAccent));
+    } finally {
+      if (mounted) setState(() => _isSavingIban = false);
     }
   }
 
-  void _showChangePasswordDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(AppStrings.tr('Şifremi Değiştir'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              TextField(controller: _oldPassCtrl, obscureText: true, decoration: InputDecoration(labelText: AppStrings.tr('Mevcut Şifreniz'))),
-              const SizedBox(height: 10),
-              TextField(controller: _newPassCtrl, obscureText: true, decoration: InputDecoration(labelText: AppStrings.tr('Yeni Şifre'))),
-              const SizedBox(height: 10),
-              TextField(controller: _confirmPassCtrl, obscureText: true, decoration: InputDecoration(labelText: AppStrings.tr('Yeni Şifre (Tekrar)'))),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(AppStrings.tr('İptal'))),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: brandPink),
-              onPressed: () async {
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                try {
-                  await _authRepository.updateUserPassword(
-                    userEmail: widget.adminEmail,
-                    newPassword: _newPassCtrl.text,
-                    confirmPassword: _confirmPassCtrl.text,
-                  );
-                  if (mounted) {
-                    Navigator.of(dialogContext).pop();
-                    _oldPassCtrl.clear();
-                    _newPassCtrl.clear();
-                    _confirmPassCtrl.clear();
-                    scaffoldMessenger.showSnackBar(SnackBar(content: Text(AppStrings.tr('Şifreniz Firebase üzerinde kalıcı olarak güncellendi!')), backgroundColor: Colors.green));
-                  }
-                } catch (e) {
-                  scaffoldMessenger.showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.redAccent));
-                }
-              },
-              child: Text(AppStrings.tr('Şifreyi Güncelle'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _createNewAdmin() async {
-    if (_newAdminNameCtrl.text.isEmpty || _newAdminEmailCtrl.text.isEmpty || _newAdminPassCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen yeni yöneticinin tüm bilgilerini doldurun.')));
+  void _createAdmin() async {
+    if (_newAdminNameController.text.trim().isEmpty ||
+        _newAdminEmailController.text.trim().isEmpty ||
+        _newAdminPasswordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen tüm alanları doldurunuz.')));
       return;
     }
 
     setState(() => _isCreatingAdmin = true);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final String cleanEmail = _newAdminEmailCtrl.text.trim().toLowerCase();
-
     try {
       await _adminRepository.createAdminCompletely(
-        name: _newAdminNameCtrl.text.trim(),
-        email: cleanEmail,
-        password: _newAdminPassCtrl.text.trim(),
+        name: _newAdminNameController.text.trim(),
+        email: _newAdminEmailController.text.trim(),
+        username: _newAdminUsernameController.text.trim().isNotEmpty ? _newAdminUsernameController.text.trim() : null,
+        password: _newAdminPasswordController.text.trim(),
       );
 
       if (mounted) {
-        scaffoldMessenger.showSnackBar(SnackBar(content: Text('Yeni yönetici ($cleanEmail) Firebase Auth & Firestore sistemine eklendi!'), backgroundColor: Colors.green));
-        _newAdminNameCtrl.clear();
-        _newAdminEmailCtrl.clear();
-        _newAdminPassCtrl.clear();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yeni yönetici hesabı oluşturuldu!'), backgroundColor: Colors.green));
+        _newAdminNameController.clear();
+        _newAdminEmailController.clear();
+        _newAdminUsernameController.clear();
+        _newAdminPasswordController.clear();
       }
     } catch (e) {
-      scaffoldMessenger.showSnackBar(SnackBar(content: Text('Yönetici ekleme hatası: $e'), backgroundColor: Colors.redAccent));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.redAccent));
     } finally {
       if (mounted) setState(() => _isCreatingAdmin = false);
     }
   }
 
-  void _showDeleteAdminDialog(String adminDocId, String name) {
+  void _showChangePasswordDialog() {
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController = TextEditingController();
+    bool isUpdating = false;
+
     showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Yöneticiyi Sil', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('$name ($adminDocId) yöneticisini sistemden silmek istediğinize emin misiniz?'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: const <Widget>[
+              Icon(Icons.lock_reset_rounded, color: brandPink, size: 24),
+              SizedBox(width: 10),
+              Text('Şifremi Değiştir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: brandDark)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                controller: newPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Yeni Şifre (En az 6 karakter)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Yeni Şifre Tekrar',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
           actions: <Widget>[
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('İptal')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('İptal', style: TextStyle(color: Colors.grey)),
+            ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-              onPressed: () async {
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                try {
-                  await _adminRepository.deleteAdminCompletely(adminDocId);
-                  if (mounted) {
-                    Navigator.of(dialogContext).pop();
-                    scaffoldMessenger.showSnackBar(SnackBar(content: Text('$name sistemden tamamen silindi.'), backgroundColor: Colors.orange));
-                  }
-                } catch (e) {
-                  scaffoldMessenger.showSnackBar(SnackBar(content: Text('Silme hatası: $e'), backgroundColor: Colors.redAccent));
-                }
-              },
-              child: const Text('Sil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: brandPink,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: isUpdating
+                  ? null
+                  : () async {
+                      final newP = newPasswordController.text.trim();
+                      final confP = confirmPasswordController.text.trim();
+
+                      if (newP.isEmpty || confP.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Lütfen tüm alanları doldurunuz.')),
+                        );
+                        return;
+                      }
+                      if (newP != confP) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Yeni şifreler birbiriyle eşleşmiyor.')),
+                        );
+                        return;
+                      }
+                      if (newP.length < 6) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Şifre en az 6 karakter olmalıdır.')),
+                        );
+                        return;
+                      }
+
+                      setModalState(() => isUpdating = true);
+                      try {
+                        final authRepo = AuthRepository();
+                        await authRepo.updateUserPassword(
+                          userEmail: widget.adminEmail,
+                          newPassword: newP,
+                          confirmPassword: confP,
+                        );
+                        if (mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Şifreniz başarıyla güncellendi!'), backgroundColor: Colors.green),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.redAccent),
+                        );
+                      } finally {
+                        setModalState(() => isUpdating = false);
+                      }
+                    },
+              child: isUpdating
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Güncelle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(28.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Text('Profilim & Yönetim Ayarları', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: brandDark)),
+          const Text('Profilim & Yönetim Ayarları', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandDark)),
           const SizedBox(height: 4),
-          const Text('Yönetici bilgilerinizi, şirket IBAN hesabını ve kurum yöneticilerini buradan yönetin.', style: TextStyle(color: Colors.grey, fontSize: 13)),
-          const SizedBox(height: 20),
+          const Text('Yönetici bilgilerinizi, şirket IBAN hesabını ve kurum yöneticilerini buradan yönetin.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 24),
 
-          // 1. ADMIN AD SOYAD VE ŞİFRE KARTI
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      const CircleAvatar(radius: 28, backgroundColor: brandPink, child: Icon(Icons.person, color: Colors.white, size: 32)),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text('Yönetici Hesabı', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: brandDark)),
-                            Text(widget.adminEmail, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.lock_reset_rounded, color: brandPink, size: 18),
-                        label: Text(AppStrings.tr('Şifremi Değiştir'), style: const TextStyle(color: brandPink, fontWeight: FontWeight.bold)),
-                        onPressed: _showChangePasswordDialog,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const SizedBox(height: 12),
-
-                  const Text('Yönetici Adı Soyadı', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: brandDark)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: TextField(
-                          controller: _nameController,
-                          decoration: InputDecoration(
-                            hintText: 'Adınız Soyadınız',
-                            prefixIcon: const Icon(Icons.badge_rounded, color: brandPink),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: brandPink,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.save_rounded, color: Colors.white),
-                        label: _isSavingName
-                            ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('Kaydet', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        onPressed: _isSavingName ? null : _saveAdminName,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          // KART 1: YÖNETİCİ HESABI
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF0F3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFDDE5), width: 1.2),
             ),
-          ),
-          const SizedBox(height: 20),
-
-          // 2. ŞİRKET IBAN BİLGİLERİ KARTI
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Row(
-                    children: <Widget>[
-                      Icon(Icons.account_balance_rounded, color: brandPink),
-                      SizedBox(width: 10),
-                      Text('Resmi Şirket IBAN Bilgileri (Veli Panellerine Yansır)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandDark)),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-
-                  if (_isLoadingIban)
-                    const Center(child: CircularProgressIndicator(color: brandPink))
-                  else ...<Widget>[
-                    TextField(
-                      controller: _accountHolderCtrl,
-                      decoration: InputDecoration(
-                        labelText: 'Hesap Sahibi / Şirket Adı',
-                        prefixIcon: const Icon(Icons.business_rounded, color: brandPink),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(color: brandPink, shape: BoxShape.circle),
+                      child: const Icon(Icons.person_rounded, color: Colors.white, size: 22),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Expanded(
-                          child: TextField(
-                            controller: _bankNameCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'Banka Adı',
-                              prefixIcon: const Icon(Icons.account_balance_wallet_rounded, color: brandOrange),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: TextField(
-                            controller: _ibanCtrl,
-                            decoration: InputDecoration(
-                              labelText: 'IBAN Numarası',
-                              prefixIcon: const Icon(Icons.credit_card_rounded, color: Colors.green),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
+                        const Text('Yönetici Hesabı', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark)),
+                        const SizedBox(height: 2),
+                        Text(widget.adminEmail, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const Spacer(),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: brandPink,
+                        side: const BorderSide(color: brandPink),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                      icon: const Icon(Icons.history_rounded, size: 16),
+                      label: const Text('Şifremi Değiştir', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      onPressed: _showChangePasswordDialog,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text('Yönetici Adı Soyadı', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandDark)),
+                const SizedBox(height: 8),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: TextField(
+                          controller: _nameController,
+                          textAlignVertical: TextAlignVertical.center,
+                          style: const TextStyle(fontSize: 13, color: brandDark),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            prefixIcon: const Icon(Icons.card_membership_rounded, color: brandPink, size: 18),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Color(0xFF8B2B43), width: 1.5),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     SizedBox(
-                      width: double.infinity,
                       height: 48,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: brandPink,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                         ),
-                        icon: const Icon(Icons.save_rounded, color: Colors.white),
-                        label: _isSavingIban
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text('IBAN Bilgilerini Güncelle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                        onPressed: _isSavingIban ? null : _saveCompanyIban,
+                        icon: _isSavingName
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Icon(Icons.save_rounded, color: Colors.white, size: 18),
+                        label: const Text('Kaydet', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                        onPressed: _isSavingName ? null : _saveName,
                       ),
                     ),
                   ],
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
 
-          // 3. YÖNETİCİ (ADMIN) EKLEME & YÖNETME KARTI
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Row(
-                    children: <Widget>[
-                      Icon(Icons.admin_panel_settings_rounded, color: brandPink),
-                      SizedBox(width: 10),
-                      Text('Yeni Yönetici (Admin) Ekle & Yetkilendir', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: brandDark)),
-                    ],
+          // KART 2: ŞİRKET IBAN BİLGİLERİ
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF0F3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFDDE5), width: 1.2),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: const <Widget>[
+                    Icon(Icons.account_balance_rounded, color: brandPink, size: 18),
+                    SizedBox(width: 8),
+                    Text('Şirket IBAN Bilgileri', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: brandPink)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  height: 48,
+                  child: TextField(
+                    controller: _accountHolderController,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: const TextStyle(fontSize: 13, color: brandDark),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      labelText: 'Hesap Adı',
+                      labelStyle: const TextStyle(color: Color(0xFF666666), fontSize: 13),
+                      floatingLabelStyle: const TextStyle(color: Color(0xFF8B2B43), fontSize: 12, fontWeight: FontWeight.bold),
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
+                      prefixIcon: const Icon(Icons.storefront_rounded, color: brandPink, size: 18),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF8B2B43), width: 1.5),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 14),
-
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: TextField(
-                          controller: _newAdminNameCtrl,
-                          decoration: InputDecoration(labelText: 'Yönetici Adı Soyadı', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                        ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 48,
+                  child: TextField(
+                    controller: _ibanController,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: const TextStyle(fontSize: 13, color: brandDark),
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      labelText: 'IBAN Numarası',
+                      labelStyle: const TextStyle(color: Color(0xFF666666), fontSize: 13),
+                      floatingLabelStyle: const TextStyle(color: Color(0xFF8B2B43), fontSize: 12, fontWeight: FontWeight.bold),
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
+                      prefixIcon: const Icon(Icons.credit_card_rounded, color: Color(0xFF20BF6B), size: 18),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _newAdminEmailCtrl,
-                          decoration: InputDecoration(labelText: 'Yönetici Kullanıcı Adı / E-Posta', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                        ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _newAdminPassCtrl,
-                          obscureText: true,
-                          decoration: InputDecoration(labelText: 'Giriş Şifresi', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                        ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF8B2B43), width: 1.5),
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: brandPink,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                      ),
+                      icon: _isSavingIban
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.save_rounded, color: Colors.white, size: 18),
+                      label: const Text('IBAN Bilgilerini Güncelle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      onPressed: _isSavingIban ? null : _saveIban,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
+          // KART 3: YENİ YÖNETİCİ EKLE & MEVCUT YÖNETİCİLER
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF0F3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFFFDDE5), width: 1.2),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: const <Widget>[
+                    Icon(Icons.person_add_alt_rounded, color: brandPink, size: 18),
+                    SizedBox(width: 8),
+                    Text('Yeni Yönetici Ekle', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: brandPink)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, boxConstraints) {
+                    final bool isCompact = boxConstraints.maxWidth < 600;
+                    if (isCompact) {
+                      return Column(
+                        children: <Widget>[
+                          _buildSimpleInput(_newAdminNameController, 'Yönetici Adı Soyadı'),
+                          const SizedBox(height: 10),
+                          _buildSimpleInput(_newAdminEmailController, 'E-Posta Adresi'),
+                          const SizedBox(height: 10),
+                          _buildSimpleInput(_newAdminUsernameController, 'Kullanıcı Adı'),
+                          const SizedBox(height: 10),
+                          _buildSimpleInput(_newAdminPasswordController, 'Giriş Şifresi', obscureText: true),
+                        ],
+                      );
+                    }
+
+                    return Column(
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Expanded(child: _buildSimpleInput(_newAdminNameController, 'Yönetici Adı Soyadı')),
+                            const SizedBox(width: 14),
+                            Expanded(child: _buildSimpleInput(_newAdminEmailController, 'E-Posta Adresi')),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: <Widget>[
+                            Expanded(child: _buildSimpleInput(_newAdminUsernameController, 'Kullanıcı Adı')),
+                            const SizedBox(width: 14),
+                            Expanded(child: _buildSimpleInput(_newAdminPasswordController, 'Giriş Şifresi', obscureText: true)),
+                          ],
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SizedBox(
+                    height: 44,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: brandOrange,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
-                      icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
-                      label: _isCreatingAdmin
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('Yeni Yönetici Hesabı Oluştur', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                      onPressed: _isCreatingAdmin ? null : _createNewAdmin,
+                      icon: _isCreatingAdmin
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Icon(Icons.person_add_rounded, color: Colors.white, size: 18),
+                      label: const Text('Yeni Yönetici Hesabı Oluştur', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      onPressed: _isCreatingAdmin ? null : _createAdmin,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Divider(),
-                  const SizedBox(height: 12),
+                ),
+                const SizedBox(height: 20),
+                const Divider(color: Color(0xFFFFDDE5)),
+                const SizedBox(height: 12),
 
-                  const Text('Mevcut Yöneticiler Listesi:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark)),
-                  const SizedBox(height: 10),
+                // MEVCUT YÖNETİCİLER LİSTESİ
+                const Text('Mevcut Yöneticiler Listesi:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: brandDark)),
+                const SizedBox(height: 10),
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'admin').snapshots(),
+                  builder: (context, snapshot) {
+                    final docs = snapshot.data?.docs ?? [];
+                    if (docs.isEmpty) {
+                      return const Padding(padding: EdgeInsets.all(8), child: Text('Kayıtlı yönetici bulunamadı.'));
+                    }
 
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'admin').snapshots(),
-                    builder: (context, snapshot) {
-                      final docs = snapshot.data?.docs ?? [];
-                      if (docs.isEmpty) {
-                        return const Text('Sistemde kayıtlı yönetici bulunamadı.', style: TextStyle(color: Colors.grey));
-                      }
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: docs.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final data = docs[index].data();
+                        final docId = docs[index].id;
+                        final name = data['fullName'] ?? data['name'] ?? 'Yönetici';
+                        final email = data['email'] ?? data['authEmail'] ?? docId;
 
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: docs.length,
-                        itemBuilder: (context, index) {
-                          final data = docs[index].data();
-                          final String docId = docs[index].id;
-                          final String name = data['fullName'] as String? ?? 'Admin';
-                          final String email = data['email'] as String? ?? docId;
-
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            color: Colors.grey.shade50,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              leading: const CircleAvatar(backgroundColor: brandPink, child: Icon(Icons.shield_rounded, color: Colors.white, size: 20)),
-                              title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text('Giriş ID: $email'),
-                              trailing: docId.trim().toLowerCase() == widget.adminEmail.trim().toLowerCase()
-                                  ? const Chip(label: Text('Siz', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)))
-                                  : IconButton(
-                                      icon: const Icon(Icons.delete_forever_rounded, color: Colors.redAccent),
-                                      onPressed: () => _showDeleteAdminDialog(docId, name),
-                                    ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFFFE5EB)),
+                          ),
+                          child: Row(
+                            children: <Widget>[
+                              const Icon(Icons.shield_outlined, color: brandPink, size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text('$name ($email)', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: brandDark)),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                                tooltip: 'Yöneticiyi Sil',
+                                onPressed: () async {
+                                  if (docId == widget.adminEmail.toLowerCase() || email == widget.adminEmail.toLowerCase()) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kendinizi silemezsiniz!')));
+                                    return;
+                                  }
+                                  await _adminRepository.deleteAdminCompletely(docId);
+                                  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yönetici silindi.')));
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleInput(TextEditingController controller, String label, {bool obscureText = false}) {
+    return SizedBox(
+      height: 48,
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        textAlignVertical: TextAlignVertical.center,
+        style: const TextStyle(fontSize: 13, color: brandDark),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          labelText: label,
+          labelStyle: const TextStyle(color: Color(0xFF666666), fontSize: 13),
+          floatingLabelStyle: const TextStyle(color: Color(0xFF8B2B43), fontSize: 12, fontWeight: FontWeight.bold),
+          floatingLabelBehavior: FloatingLabelBehavior.auto,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF7A7A7A), width: 1.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF8B2B43), width: 1.5),
+          ),
+        ),
       ),
     );
   }

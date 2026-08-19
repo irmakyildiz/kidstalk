@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email in ['irmakyildiz2007@gmail.com', 'irmakyildiz@kidstalk.online'] ||
+        request.auth.uid in ['admin', 'irmakyildiz'] ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher'
+      );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && (
+        request.auth.uid == userId ||
+        request.auth.token.email == userId
+      );
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isOwner(userId);
+    }
+
+    // System Settings (WhatsApp API tokens etc.) - Only Admin
+    match /system_settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Homeworks Collection
+    match /homeworks/{homeworkId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && (isAdmin() || isTeacher());
+      allow update: if isAuthenticated(); // e.g. mark as read or update content
+      allow delete: if isAuthenticated() && (isAdmin() || isTeacher());
+    }
+
+    // Lessons Collection
+    match /lessons/{lessonId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isTeacher());
+    }
+
+    // Feedbacks Collection
+    match /feedbacks/{feedbackId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && (isAdmin() || isTeacher());
+    }
+
+    // Receipts Collection
+    match /receipts/{receiptId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Requests Collection (Teacher to Admin requests)
+    match /requests/{requestId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Teacher Availability Slots
+    match /teacher_slots/{slotId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || isTeacher());
+    }
+  }
+}

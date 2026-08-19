@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_strings.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../auth/presentation/screens/login_screen.dart';
+import '../widgets/teacher/teacher_homework_tab.dart';
 import '../widgets/teacher/teacher_profile_tab_widget.dart';
-import '../widgets/teacher/teacher_request_tab.dart';
+import '../widgets/teacher/teacher_request_tab.dart' hide TeacherHomeworkTab;
 import '../widgets/teacher/teacher_schedule_tab.dart';
 import '../widgets/teacher/teacher_students_tab.dart';
 
@@ -30,13 +30,15 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
   static const Color brandOrange = Color(0xFFFF7A59);
   static const Color brandYellow = Color(0xFFFFD43B);
 
-  String _selectedCountry = '🇬🇧 United Kingdom';
+  String _displayName = '';
   String _zoomLink = 'https://zoom.us/j/123456789';
+  String _selectedCountry = '🇬🇧 United Kingdom';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _displayName = widget.teacherName;
+    _tabController = TabController(length: 5, vsync: this);
     _loadTeacherProfile();
   }
 
@@ -51,23 +53,26 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
     if (doc.exists && mounted) {
       final data = doc.data();
       setState(() {
-        _selectedCountry = data?['country'] as String? ?? '🇬🇧 United Kingdom';
-        _zoomLink = data?['zoomLink'] as String? ?? 'https://zoom.us/j/123456789';
+        final String nameFromDb = (data?['fullName'] ?? data?['name'] ?? '').toString().trim();
+        if (nameFromDb.isNotEmpty) {
+          _displayName = nameFromDb;
+        }
+        _selectedCountry = data?['country'] ?? '🇬🇧 United Kingdom';
+        _zoomLink = data?['zoomLink'] ?? 'https://zoom.us/j/123456789';
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final String flag = _selectedCountry.split(' ').first;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: const Color(0xFFF9FAFC),
       body: SafeArea(
         child: Column(
           children: <Widget>[
+            // HEADER BAR
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: <Color>[brandPink, brandOrange, brandYellow],
@@ -79,54 +84,61 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                 children: <Widget>[
                   Container(
                     padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                    child: Image.asset('assets/images/logo.png', height: 38, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.school, color: brandPink, size: 28)),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text('${AppStrings.tr("Hoş Geldiniz")}, ${widget.teacherName} $flag', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(10)),
-                          child: Text(AppStrings.tr('Öğretmen Paneli'), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                        ),
-                      ],
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      height: 40,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.school, color: brandPink, size: 28),
                     ),
                   ),
-
-                  DropdownButton<String>(
-                    value: AppStrings.currentLang,
-                    dropdownColor: Colors.white,
-                    underline: const SizedBox(),
-                    icon: const Icon(Icons.language_rounded, color: Colors.white),
-                    items: const <DropdownMenuItem<String>>[
-                      DropdownMenuItem(value: 'tr', child: Text('🇹🇷 TR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                      DropdownMenuItem(value: 'en', child: Text('🇬🇧 ENG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Welcome, $_displayName 🌍',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Teacher Portal',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ),
                     ],
-                    onChanged: (String? newLang) async {
-                      if (newLang != null) {
-                        setState(() => AppStrings.currentLang = newLang);
-                        await _authRepository.updateUserLanguage(widget.teacherId, newLang);
-                      }
-                    },
                   ),
-                  const SizedBox(width: 8),
-
+                  const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 26),
+                    icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 24),
+                    tooltip: 'Logout',
                     onPressed: () async {
                       await _authRepository.signOut();
-                      if (mounted) Navigator.of(context).pushReplacement(MaterialPageRoute<void>(builder: (_) => const LoginScreen()));
+                      if (context.mounted) {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }
                     },
                   ),
                 ],
               ),
             ),
 
+            // TAB BAR (5 TABS)
             Container(
               color: Colors.white,
               child: TabBar(
@@ -135,22 +147,25 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen>
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: brandPink,
                 indicatorWeight: 3,
-                tabs: <Widget>[
-                  Tab(icon: const Icon(Icons.calendar_month_rounded), text: AppStrings.tr('Ders Programım')),
-                  Tab(icon: const Icon(Icons.school_rounded), text: AppStrings.tr('Öğrencilerim')),
-                  Tab(icon: const Icon(Icons.edit_note_rounded), text: AppStrings.tr('Talep Oluştur')),
-                  Tab(icon: const Icon(Icons.person_rounded), text: AppStrings.tr('Profilim')),
+                tabs: const <Widget>[
+                  Tab(icon: Icon(Icons.calendar_month_rounded, size: 20), text: 'My Schedule'),
+                  Tab(icon: Icon(Icons.school_rounded, size: 20), text: 'My Students'),
+                  Tab(icon: Icon(Icons.assignment_outlined, size: 20), text: 'Homework'),
+                  Tab(icon: Icon(Icons.edit_note_rounded, size: 20), text: 'Create Request'),
+                  Tab(icon: Icon(Icons.person_rounded, size: 20), text: 'My Profile'),
                 ],
               ),
             ),
 
+            // TAB VIEWS
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: <Widget>[
                   TeacherScheduleTab(teacherId: widget.teacherId, teacherName: widget.teacherName, zoomLink: _zoomLink),
-                  TeacherStudentsTab(teacherName: widget.teacherName),
-                  const TeacherRequestTab(),
+                  TeacherStudentsTab(teacherId: widget.teacherId, teacherName: widget.teacherName),
+                  TeacherHomeworkTab(teacherId: widget.teacherId, teacherName: widget.teacherName),
+                  TeacherRequestTab(teacherId: widget.teacherId, teacherName: widget.teacherName),
                   TeacherProfileTabWidget(
                     teacherId: widget.teacherId,
                     teacherName: widget.teacherName,

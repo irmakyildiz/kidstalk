@@ -26,9 +26,12 @@ class LessonModel {
   final String zoomLink;
   final DateTime date;
   final String time; // Örn: "14:00 - 14:30"
+  final String day; // Örn: "Pazartesi"
   final LessonType lessonType;
   final LessonStatus status;
   final String? notes;
+  final bool isDemo;
+  final bool isBusy;
 
   LessonModel({
     required this.id,
@@ -39,14 +42,24 @@ class LessonModel {
     required this.zoomLink,
     required this.date,
     required this.time,
+    this.day = 'Pazartesi',
     required this.lessonType,
     required this.status,
     this.notes,
+    this.isDemo = false,
+    this.isBusy = false,
   });
 
   /// Firestore Verisini (Map) Dart Nesnesine Çevirir
   factory LessonModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final Map<String, dynamic> data = doc.data() ?? <String, dynamic>{};
+    final String rawStatus = (data['status'] as String? ?? '').toLowerCase().trim();
+    final String rawStudentId = (data['studentId'] as String? ?? '').toLowerCase().trim();
+    final String rawStudentName = (data['studentName'] as String? ?? '').toLowerCase().trim();
+    final bool busyFlag = rawStatus == 'busy' ||
+        rawStudentId == 'busy_slot' ||
+        rawStudentName.contains('meşgul') ||
+        rawStudentName.contains('mola');
     
     return LessonModel(
       id: doc.id,
@@ -57,9 +70,12 @@ class LessonModel {
       zoomLink: data['zoomLink'] as String? ?? '',
       date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
       time: data['time'] as String? ?? '00:00',
+      day: data['day'] as String? ?? 'Pazartesi',
       lessonType: _parseLessonType(data['lessonType'] as String?),
       status: _parseLessonStatus(data['status'] as String?),
       notes: data['notes'] as String?,
+      isDemo: (data['isDemo'] as bool?) ?? (rawStatus == 'demo' || data['lessonType'] == 'demo'),
+      isBusy: busyFlag,
     );
   }
 

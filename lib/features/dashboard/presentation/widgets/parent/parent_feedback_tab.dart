@@ -16,15 +16,34 @@ class ParentFeedbackTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ScheduleRepository scheduleRepository = ScheduleRepository();
-    final String studentEmail = parentProfileData?['linkedStudentEmail'] as String? ?? '';
+    final String studentEmail = (parentProfileData?['uid'] ?? parentProfileData?['username'] ?? parentProfileData?['studentUsername'] ?? parentProfileData?['linkedStudentEmail'] ?? parentProfileData?['email'] ?? '').toString();
+    final String studentName = (parentProfileData?['studentName'] ?? parentProfileData?['fullName'] ?? '').toString();
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: scheduleRepository.getStudentFeedbacksStream(studentEmail),
+    return StreamBuilder<List<QueryDocumentSnapshot<Map<String, dynamic>>>>(
+      stream: scheduleRepository.getStudentFeedbacksStream(studentEmail, studentName),
       builder: (context, snapshot) {
-        final docs = snapshot.data?.docs ?? [];
+        final docs = snapshot.data ?? [];
 
         if (docs.isEmpty) {
-          return const Center(child: Text('Henüz öğretmen tarafından girilmiş bir gelişim notu bulunmuyor.', style: TextStyle(color: Colors.grey)));
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: const Padding(
+                padding: EdgeInsets.all(32.0),
+                child: Column(
+                  children: <Widget>[
+                    Icon(Icons.auto_graph_rounded, size: 48, color: Colors.grey),
+                    SizedBox(height: 12),
+                    Text('Öğrenci Gelişim & Not Raporları', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: brandDark)),
+                    SizedBox(height: 8),
+                    Text('Henüz öğretmeniniz tarafından yazılmış bir gelişim notu bulunmuyor.', style: TextStyle(color: Colors.grey, fontSize: 13), textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
 
         return ListView.builder(
@@ -39,6 +58,7 @@ class ParentFeedbackTab extends StatelessWidget {
 
             return Card(
               margin: const EdgeInsets.only(bottom: 14),
+              elevation: 4,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
@@ -49,13 +69,18 @@ class ParentFeedbackTab extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
                         Text(dateStr, style: const TextStyle(color: brandPink, fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('Öğretmen: $teacherName', style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(color: brandPink.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                          child: Text('Öğretmen: $teacherName', style: const TextStyle(color: brandPink, fontSize: 11, fontWeight: FontWeight.bold)),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Text(topic, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: brandDark)),
                     const SizedBox(height: 8),
                     Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
                       child: Text('Öğretmen Notu: $notes', style: const TextStyle(fontSize: 13, height: 1.4)),

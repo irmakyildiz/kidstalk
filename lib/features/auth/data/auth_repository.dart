@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/security_helper.dart';
 
 class AuthRepository {
   final FirebaseAuth _firebaseAuth;
@@ -10,6 +11,8 @@ class AuthRepository {
     'aybuke@kidstalkonline.com',
     'admin@kidstalk.com',
     'admin@kidstalkonline.com',
+    'irmakyildiz2007@gmail.com',
+    'irmakyildiz',
   ];
 
   AuthRepository({
@@ -21,17 +24,66 @@ class AuthRepository {
   User? get currentUser => _firebaseAuth.currentUser;
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
-  /// E-posta ve Şifre ile Giriş Yapma
+  /// E-posta veya Kullanıcı Adı ve Şifre ile Giriş Yapma
   Future<UserCredential> loginWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
     try {
+      final String cleanInput = email.trim().toLowerCase().replaceAll(' ', '');
+      String authEmail = cleanInput;
+
+      if (!cleanInput.contains('@')) {
+        // 1. Önce doğrudan doküman ID'si kullanıcı adı olan kayda bakılır
+        final DocumentSnapshot<Map<String, dynamic>> userDoc =
+            await _firestore.collection('users').doc(cleanInput).get();
+
+        if (userDoc.exists && userDoc.data() != null) {
+          final data = userDoc.data()!;
+          authEmail = (data['authEmail'] as String?) ?? (data['email'] as String?) ?? '$cleanInput@kidstalk.online';
+        } else {
+          // 2. Bulunamazsa 'username' alanına göre sorgulanır
+          final QuerySnapshot<Map<String, dynamic>> queryUsername = await _firestore
+              .collection('users')
+              .where('username', isEqualTo: cleanInput)
+              .limit(1)
+              .get();
+
+          if (queryUsername.docs.isNotEmpty) {
+            final data = queryUsername.docs.first.data();
+            authEmail = (data['authEmail'] as String?) ?? (data['email'] as String?) ?? '$cleanInput@kidstalk.online';
+          } else {
+            // 3. Bulunamazsa 'studentUsername' alanına göre sorgulanır
+            final QuerySnapshot<Map<String, dynamic>> queryStudent = await _firestore
+                .collection('users')
+                .where('studentUsername', isEqualTo: cleanInput)
+                .limit(1)
+                .get();
+
+            if (queryStudent.docs.isNotEmpty) {
+              final data = queryStudent.docs.first.data();
+              authEmail = (data['authEmail'] as String?) ?? (data['email'] as String?) ?? '$cleanInput@kidstalk.online';
+            } else {
+              authEmail = '$cleanInput@kidstalk.online';
+            }
+          }
+        }
+      }
+
       final UserCredential credential =
           await _firebaseAuth.signInWithEmailAndPassword(
-        email: email.trim().toLowerCase(),
-        password: password,
+        email: authEmail,
+        password: password.trim(),
       );
+
+      // Başarılı girişte Firestore dokümanında güvenli SHA-256 hash'i sakla
+      if (!cleanInput.contains('@')) {
+        try {
+          await _firestore.collection('users').doc(cleanInput).set({
+            'passwordHash': SecurityHelper.hashPassword(password),
+          }, SetOptions(merge: true));
+        } catch (_) {}
+      }
 
       return credential;
     } on FirebaseAuthException catch (e) {
@@ -39,11 +91,11 @@ class AuthRepository {
     }
   }
 
-  /// Esnek Kullanıcı Profil Getirici (UID veya E-Posta İle Sorgular)
+  /// Esnek Kullanıcı Profil Getirici (UID, Kullanıcı Adı veya E-Posta İle Sorgular)
   Future<DocumentSnapshot<Map<String, dynamic>>> getUserProfile(String uidOrEmail) async {
-    final String cleanId = uidOrEmail.trim().toLowerCase();
+    final String cleanId = uidOrEmail.trim().toLowerCase().replaceAll(' ', '');
 
-    // 1. Önce Doküman ID'si e-posta olan kayda bakar
+    // 1. Önce Doküman ID'si alan kayda bakılır
     final DocumentSnapshot<Map<String, dynamic>> docById =
         await _firestore.collection('users').doc(cleanId).get();
 
@@ -55,32 +107,92 @@ class AuthRepository {
       return docById;
     }
 
-    // 2. Bulamazsa UID ile arar
-    final DocumentSnapshot<Map<String, dynamic>> docByUid =
-        await _firestore.collection('users').doc(uidOrEmail).get();
+    // 2. 'username' alanına göre sorgulanır
+    final QuerySnapshot<Map<String, dynamic>> queryUsername = await _firestore
+        .collection('users')
+        .where('username', isEqualTo: cleanId)
+        .limit(1)
+        .get();
 
-    if (docByUid.exists) {
-      final data = docByUid.data();
-      if (data != null && data.containsKey('preferredLanguage')) {
-        AppStrings.currentLang = data['preferredLanguage'] ?? 'tr';
+    if (queryUsername.docs.isNotEmpty) {
+      final doc = queryUsername.docs.first;
+      if (doc.data().containsKey('preferredLanguage')) {
+        AppStrings.currentLang = doc.data()['preferredLanguage'] ?? 'tr';
       }
-      return docByUid;
+      return doc;
     }
 
-    // 3. Bulamazsa 'email' alanına göre koleksiyonu sorgular
-    final QuerySnapshot<Map<String, dynamic>> query = await _firestore
+    // 3. 'email' alanına göre sorgulanır
+    final QuerySnapshot<Map<String, dynamic>> queryEmail = await _firestore
         .collection('users')
         .where('email', isEqualTo: cleanId)
         .limit(1)
         .get();
 
-    if (query.docs.isNotEmpty) {
-      final doc = query.docs.first;
-      final data = doc.data();
-      if (data.containsKey('preferredLanguage')) {
-        AppStrings.currentLang = data['preferredLanguage'] ?? 'tr';
+    if (queryEmail.docs.isNotEmpty) {
+      final doc = queryEmail.docs.first;
+      if (doc.data().containsKey('preferredLanguage')) {
+        AppStrings.currentLang = doc.data()['preferredLanguage'] ?? 'tr';
       }
       return doc;
+    }
+
+    // 4. 'authEmail' alanına göre sorgulanır
+    final QuerySnapshot<Map<String, dynamic>> queryAuthEmail = await _firestore
+        .collection('users')
+        .where('authEmail', isEqualTo: cleanId)
+        .limit(1)
+        .get();
+
+    if (queryAuthEmail.docs.isNotEmpty) {
+      final doc = queryAuthEmail.docs.first;
+      if (doc.data().containsKey('preferredLanguage')) {
+        AppStrings.currentLang = doc.data()['preferredLanguage'] ?? 'tr';
+      }
+      return doc;
+    }
+
+    // 5. 'studentUsername' alanına göre sorgulanır
+    final QuerySnapshot<Map<String, dynamic>> queryStudent = await _firestore
+        .collection('users')
+        .where('studentUsername', isEqualTo: cleanId)
+        .limit(1)
+        .get();
+
+    if (queryStudent.docs.isNotEmpty) {
+      final doc = queryStudent.docs.first;
+      if (doc.data().containsKey('preferredLanguage')) {
+        AppStrings.currentLang = doc.data()['preferredLanguage'] ?? 'tr';
+      }
+      return doc;
+    }
+
+    // 6. E-Posta adresinin @ öncesi kullanıcı adı köküne göre sorgulanır (örn: robyn@kidstalk.online -> robyn)
+    if (cleanId.contains('@')) {
+      final String prefix = cleanId.split('@').first;
+      final DocumentSnapshot<Map<String, dynamic>> docByPrefix =
+          await _firestore.collection('users').doc(prefix).get();
+      if (docByPrefix.exists) {
+        final data = docByPrefix.data();
+        if (data != null && data.containsKey('preferredLanguage')) {
+          AppStrings.currentLang = data['preferredLanguage'] ?? 'tr';
+        }
+        return docByPrefix;
+      }
+
+      final QuerySnapshot<Map<String, dynamic>> queryPrefix = await _firestore
+          .collection('users')
+          .where('username', isEqualTo: prefix)
+          .limit(1)
+          .get();
+
+      if (queryPrefix.docs.isNotEmpty) {
+        final doc = queryPrefix.docs.first;
+        if (doc.data().containsKey('preferredLanguage')) {
+          AppStrings.currentLang = doc.data()['preferredLanguage'] ?? 'tr';
+        }
+        return doc;
+      }
     }
 
     return docById;
@@ -108,44 +220,136 @@ class AuthRepository {
     required String newPassword,
     required String confirmPassword,
   }) async {
-    if (newPassword.trim() != confirmPassword.trim()) {
-      throw AppStrings.tr('Yeni şifreler eşleşmiyor!');
+    final String cleanNew = newPassword.trim();
+    final String cleanConf = confirmPassword.trim();
+
+    if (cleanNew.isEmpty || cleanConf.isEmpty) {
+      throw 'Lütfen yeni şifreyi ve doğrulamasını giriniz.';
     }
-    if (newPassword.trim().length < 6) {
-      throw AppStrings.tr('Şifreniz en az 6 karakter olmalıdır.');
+    if (cleanNew != cleanConf) {
+      throw 'Yeni şifreler birbiriyle eşleşmiyor!';
+    }
+    if (cleanNew.length < 6) {
+      throw 'Şifreniz en az 6 karakter olmalıdır.';
     }
 
-    final String cleanEmail = userEmail.trim().toLowerCase();
+    final String cleanId = userEmail.trim().toLowerCase().replaceAll(' ', '');
 
-    // 1. Firebase Auth Üzerinde Güncelle
+    // 1. Firebase Auth Üzerinde Güncelle (Mevcut oturum açmış kullanıcı varsa)
     final User? user = _firebaseAuth.currentUser;
     if (user != null) {
       try {
-        await user.updatePassword(newPassword.trim());
+        await user.updatePassword(cleanNew);
       } catch (e) {
-        print('Firebase Auth Şifre Güncelleme Bilgisi: $e');
+        print('Firebase updatePassword error: $e');
       }
     }
 
-    // 2. Firestore Dokümanında Kalıcı Sakla
-    await _firestore.collection('users').doc(cleanEmail).set({
-      'password': newPassword.trim(),
-    }, SetOptions(merge: true));
+    // 2. Firestore Dokümanında ve ilgili tüm kullanıcı kayıtlarında şifreyi güncelle
+    final Map<String, dynamic> updateData = {
+      'password': cleanNew,
+      'rawPassword': cleanNew,
+      'passwordHash': SecurityHelper.hashPassword(cleanNew),
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    // a) Doğrudan cleanId dokümanı:
+    await _firestore.collection('users').doc(cleanId).set(updateData, SetOptions(merge: true));
+
+    // b) Eşleşen email, authEmail, username kayıtları:
+    try {
+      final queries = await Future.wait([
+        _firestore.collection('users').where('email', isEqualTo: cleanId).get(),
+        _firestore.collection('users').where('authEmail', isEqualTo: cleanId).get(),
+        _firestore.collection('users').where('username', isEqualTo: cleanId).get(),
+        _firestore.collection('users').where('studentUsername', isEqualTo: cleanId).get(),
+      ]);
+
+      final batch = _firestore.batch();
+      for (final q in queries) {
+        for (final doc in q.docs) {
+          batch.set(doc.reference, updateData, SetOptions(merge: true));
+        }
+      }
+      await batch.commit();
+    } catch (_) {}
+  }
+
+  /// Kullanıcı Adı veya E-Posta İle Şifre Sıfırlama Bağlantısı Gönderir
+  Future<String> sendPasswordReset({required String identifier}) async {
+    final String rawInput = identifier.trim();
+    final String cleanInput = rawInput.toLowerCase().replaceAll(' ', '');
+
+    if (cleanInput.isEmpty) {
+      throw 'Lütfen kullanıcı adınızı veya e-posta adresinizi giriniz.';
+    }
+
+    String targetEmail = '';
+
+    if (cleanInput.contains('@')) {
+      targetEmail = cleanInput;
+    } else {
+      // 1. Önce kullanıcı profilinden e-posta bul
+      final profileDoc = await getUserProfile(rawInput);
+      if (profileDoc.exists && profileDoc.data() != null) {
+        final data = profileDoc.data()!;
+        targetEmail = (data['linkedParentEmail'] as String?) ??
+            (data['parentEmail'] as String?) ??
+            (data['email'] as String?) ??
+            (data['authEmail'] as String?) ??
+            '';
+      }
+
+      // 2. Bulunamadıysa 'fullName' alanına göre sorgula
+      if (targetEmail.isEmpty) {
+        final queryFullName = await _firestore
+            .collection('users')
+            .where('fullName', isEqualTo: rawInput)
+            .limit(1)
+            .get();
+
+        if (queryFullName.docs.isNotEmpty) {
+          final data = queryFullName.docs.first.data();
+          targetEmail = (data['linkedParentEmail'] as String?) ??
+              (data['parentEmail'] as String?) ??
+              (data['email'] as String?) ??
+              (data['authEmail'] as String?) ??
+              '';
+        }
+      }
+
+      if (targetEmail.isEmpty || targetEmail.endsWith('@kidstalk.online')) {
+        throw 'Bu kullanıcı hesabı için tanımlı gerçek bir veli e-posta adresi bulunamadı. Lütfen doğrudan e-posta adresinizi giriniz veya yöneticiniz ile iletişime geçiniz.';
+      }
+    }
+
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: targetEmail.trim());
+      return targetEmail.trim();
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'invalid-email') {
+        throw 'Kullanıcı bulunamadı. Lütfen size tanımlanan kullanıcı adını veya veli e-postasını girdiğinizden emin olun.';
+      }
+      throw _handleAuthException(e);
+    } catch (e) {
+      throw 'Şifre sıfırlama talebi iletilemedi: $e';
+    }
   }
 
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
-      case 'user-not-found':
+      case 'wrong-password':
       case 'invalid-credential':
-        return 'E-posta veya şifre hatalı.';
+        return 'Kullanıcı adı veya şifre yanlış.';
+      case 'user-not-found':
+      case 'invalid-email':
+        return 'Kullanıcı Bulunamadı';
       case 'email-already-in-use':
-        return 'Bu e-posta adresi zaten kullanımda.';
+        return 'Bu kullanıcı adı veya e-posta adresi zaten kullanımda.';
       case 'weak-password':
         return 'Şifre çok zayıf. En az 6 karakter kullanın.';
-      case 'invalid-email':
-        return 'Geçersiz e-posta adresi formatı.';
       default:
-        return e.message ?? 'Bir hata oluştu.';
+        return 'Kullanıcı adı veya şifre yanlış.';
     }
   }
 }
