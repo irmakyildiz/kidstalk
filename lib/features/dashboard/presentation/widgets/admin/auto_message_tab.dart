@@ -161,7 +161,7 @@ class _AutoMessageTabState extends State<AutoMessageTab> {
                                   ),
                                   onPressed: () => setState(() => _selectedDay = day),
                                   child: Text(
-                                    isSelected ? '✓ $day' : day,
+                                    day,
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                   ),
                                 ),
@@ -196,7 +196,7 @@ class _AutoMessageTabState extends State<AutoMessageTab> {
                                     ),
                                     onPressed: () => setState(() => _selectedDay = day),
                                     child: Text(
-                                      isSelected ? '✓ $day' : day,
+                                      day,
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                     ),
                                   ),

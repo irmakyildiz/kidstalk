@@ -140,7 +140,7 @@ class _TeacherScheduleTabState extends State<TeacherScheduleTab> {
                     ),
                     onPressed: () => setState(() => _selectedDay = day),
                     child: Text(
-                      isSelected ? '✓ $day' : day,
+                      day,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),
