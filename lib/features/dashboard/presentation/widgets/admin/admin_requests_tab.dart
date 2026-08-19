@@ -182,34 +182,25 @@ class _AdminRequestsTabState extends State<AdminRequestsTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: <Widget>[
-                            Flexible(
-                              child: Row(
-                                children: <Widget>[
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFE8EE),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      teacherName,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandPink),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      title,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFE8EE),
+                                borderRadius: BorderRadius.circular(8),
                               ),
+                              child: Text(
+                                teacherName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: brandPink),
+                              ),
+                            ),
+                            Text(
+                              title,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: brandDark),
                             ),
                             Row(
                               mainAxisSize: MainAxisSize.min,
