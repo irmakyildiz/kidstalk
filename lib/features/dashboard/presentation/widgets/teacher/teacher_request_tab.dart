@@ -71,6 +71,54 @@ class _TeacherRequestTabState extends State<TeacherRequestTab> {
     }
   }
 
+  void _withdrawRequest(String requestId, String title) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: <Widget>[
+            Icon(Icons.undo_rounded, color: Color(0xFFE74C3C), size: 22),
+            SizedBox(width: 8),
+            Text('Withdraw Request', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Text('Are you sure you want to withdraw and delete this request ("$title")?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE74C3C),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Withdraw & Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await FirebaseFirestore.instance.collection('teacher_requests').doc(requestId).delete();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Request withdrawn and deleted successfully.'), backgroundColor: Colors.green),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -192,6 +240,7 @@ class _TeacherRequestTabState extends State<TeacherRequestTab> {
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final data = docs[index].data();
+                  final requestId = docs[index].id;
                   final title = data['title'] ?? data['type'] ?? 'Request';
                   final desc = data['description'] ?? '';
                   final status = data['status'] ?? 'pending';
@@ -229,6 +278,22 @@ class _TeacherRequestTabState extends State<TeacherRequestTab> {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                           child: Text(statusLabel, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                        const SizedBox(width: 8),
+                        Tooltip(
+                          message: 'Withdraw & Delete Request',
+                          child: InkWell(
+                            onTap: () => _withdrawRequest(requestId, title),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFECEE),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFE74C3C)),
+                            ),
+                          ),
                         ),
                       ],
                     ),
